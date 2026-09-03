@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Mosque Management System (MMS)
+
+A production-ready full-stack web application for managing a single mosque. It pairs a public-facing website with a secure, role-based admin dashboard for managing finances, members, staff, events, assets, requests, and more.
+
+Built with **Next.js 16** (App Router, TypeScript strict, Tailwind CSS v4), **Supabase** (PostgreSQL, Auth, Storage, Row-Level Security), and a shadcn-style Radix UI component set with a custom emerald/cream Islamic theme.
+
+## Tech Stack
+
+- **Framework**: Next.js 16.3.4 (App Router, Turbopack), TypeScript (strict)
+- **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`)
+- **UI**: Radix UI primitives, Lucide icons, class-variance-authority, tailwind-merge
+- **Forms**: React Hook Form + Zod
+- **Charts**: Recharts, **Tables**: TanStack Table
+- **Backend**: Supabase (PostgreSQL, Auth, Storage), `@supabase/ssr`
+- **Notifications**: sonner
+
+## Features
+
+### Public Website
+- Homepage with prayer times, countdown to next prayer, upcoming events, and announcement highlights
+- Prayer times, Events (with detail pages), Announcements, Khutbah archive, Committee, and Gallery pages
+- Donate page (manual payment flow, BDT `৳`) and Contact page
+- SEO metadata, sitemap, robots.txt, and web manifest
+
+### Admin Dashboard (`/admin`)
+- **Overview**: stats cards, donation vs expense charts, donation-by-fund chart, recent activity, quick actions
+- **Finance**: Donations, Funds, Income, Expenses (with approve/reject flow), Reports with CSV export
+- **Mosque**: Prayer management (create/copy/delete daily times), Announcements, Events, Khutbah
+- **People**: Members, Committee, Staff, Users & Roles/Permissions, Zakat & Charity
+- **Operations**: Assets, Maintenance, Documents, Contact Requests
+- **Community**: Ramadan
+- **System**: Audit Logs, Settings
+- Role-based access control (RBAC) with 8 roles and permission strings enforced via Supabase RLS and `has_permission()`
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+- Node.js 18.18+ (Next.js 16 requirement)
+- A Supabase project with the schema applied
+
+### Install & Run
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Copy `.env.example` to `.env.local` and fill in:
 
-## Learn More
+| Variable | Description |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon (public) key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service-role key (server only — never expose) |
+| `NEXT_PUBLIC_APP_URL` | Public app URL (defaults to `http://localhost:3000`) |
 
-To learn more about Next.js, take a look at the following resources:
+### Database Setup
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Apply the schema, RLS policies, and triggers:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+# via Supabase CLI
+supabase db push
+# or run supabase/migrations/001_initial_schema.sql in the SQL editor
+```
 
-## Deploy on Vercel
+Then seed data (funds, roles, payment methods, etc.) with `supabase/seed.sql`. Create the initial Super Admin user in the Supabase Auth dashboard and promote them by updating their `profiles` row to `role = 'super_admin'` (see comments in `seed.sql`).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `npm run dev` — start the development server
+- `npm run build` — create a production build
+- `npm run start` — run the production build
+- `npm run lint` — run ESLint
+
+## Architecture
+
+```
+src/
+  app/
+    (public)/    # public website routes
+    (auth)/      # login, signup, forgot/reset password
+    admin/       # admin dashboard routes
+    auth/        # auth callback route
+  components/
+    ui/          # shadcn-style primitives
+    forms/       # reusable form components
+    admin/       # admin UI (dashboard, data table, dialogs, sidebar)
+    public/      # public website components
+  lib/
+    supabase/    # browser/server/admin clients + proxy helper
+    auth/        # session helpers + auth server actions
+    actions/     # server actions (public + admin)
+    queries/     # data fetching (public + admin)
+    permissions/ # RBAC definitions
+    validations/ # Zod schemas
+    utils/       # formatting, audit, IP helpers
+  constants/     # shared constants (statuses, categories, roles, etc.)
+  types/         # database & domain types
+supabase/
+  migrations/    # schema, RLS, triggers
+  seed.sql       # seed data
+```
+
+## Notes
+
+- Currency is BDT (`৳`); phone validation uses a Bangladeshi regex.
+- Donations use a manual-payment flow (no external payment gateway).
+- In Next.js 16 `middleware.ts` is renamed to `proxy.ts` (`src/proxy.ts`).
