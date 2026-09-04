@@ -57,6 +57,7 @@ export function KhutbahClient({ data, total, page, totalPages, filters }: Khutba
   const [createState, createFormAction, isCreating] = useActionState(createKhutbah, {});
   const [updateState, updateFormAction, isUpdating] = useActionState(updateKhutbah, {});
   const [isDeleting, startDeleteTransition] = useTransition();
+  const [, startSubmitTransition] = useTransition();
 
   const form = useForm<FormData>({
     resolver: zodResolver(khutbahSchema),
@@ -145,12 +146,14 @@ export function KhutbahClient({ data, total, page, totalPages, filters }: Khutba
         fd.set(key, String(value));
       }
     });
-    if (editingItem) {
-      fd.set("id", editingItem.id);
-      updateFormAction(fd);
-    } else {
-      createFormAction(fd);
-    }
+    startSubmitTransition(() => {
+      if (editingItem) {
+        fd.set("id", editingItem.id);
+        updateFormAction(fd);
+      } else {
+        createFormAction(fd);
+      }
+    });
   });
 
   const columns: Column<Khutbah>[] = [

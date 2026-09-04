@@ -64,6 +64,7 @@ export function AnnouncementsClient({
   const [createState, createFormAction, isCreating] = useActionState(createAnnouncement, {});
   const [updateState, updateFormAction, isUpdating] = useActionState(updateAnnouncement, {});
   const [isDeleting, startDeleteTransition] = useTransition();
+  const [, startSubmitTransition] = useTransition();
 
   const form = useForm<FormData>({
     resolver: zodResolver(announcementSchema),
@@ -152,12 +153,14 @@ export function AnnouncementsClient({
         fd.set(key, String(value));
       }
     });
-    if (editingItem) {
-      fd.set("id", editingItem.id);
-      updateFormAction(fd);
-    } else {
-      createFormAction(fd);
-    }
+    startSubmitTransition(() => {
+      if (editingItem) {
+        fd.set("id", editingItem.id);
+        updateFormAction(fd);
+      } else {
+        createFormAction(fd);
+      }
+    });
   });
 
   const columns: Column<Announcement>[] = [

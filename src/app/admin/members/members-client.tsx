@@ -69,6 +69,7 @@ export function MembersClient({
   const [createState, createFormAction, isCreating] = useActionState(createMember, {});
   const [updateState, updateFormAction, isUpdating] = useActionState(updateMember, {});
   const [isDeleting, startDeleteTransition] = useTransition();
+  const [, startSubmitTransition] = useTransition();
 
   const form = useForm<FormData>({
     resolver: zodResolver(memberSchema),
@@ -163,12 +164,14 @@ export function MembersClient({
         fd.set(key, String(value));
       }
     });
-    if (editingItem) {
-      fd.set("id", editingItem.id);
-      updateFormAction(fd);
-    } else {
-      createFormAction(fd);
-    }
+    startSubmitTransition(() => {
+      if (editingItem) {
+        fd.set("id", editingItem.id);
+        updateFormAction(fd);
+      } else {
+        createFormAction(fd);
+      }
+    });
   });
 
   const columns: Column<Member>[] = [

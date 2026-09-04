@@ -86,7 +86,7 @@ export default async function HomePage() {
           {nextPrayer && (
             <div className="mt-12 max-w-xl mx-auto">
               <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
-                <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
                   <div>
                     <p className="text-3xl font-bold text-accent">{nextPrayer.name}</p>
                     <p className="text-sm text-emerald-100 mt-1">

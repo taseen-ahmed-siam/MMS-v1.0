@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useActionState, useState, useEffect, useMemo, useRef } from "react";
+import { useActionState, useState, useEffect, useMemo, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -314,6 +314,7 @@ function MaintenanceFormDialog({
 
   const action = editing ? updateMaintenance : createMaintenance;
   const [state, formAction, pending] = useActionState(action, initialState);
+  const [, startSubmitTransition] = useTransition();
 
   const {
     register,
@@ -376,7 +377,9 @@ function MaintenanceFormDialog({
     if (assetId) fd.set("asset_id", assetId);
     fd.set("priority", priority);
     fd.set("status", status);
-    formAction(fd);
+    startSubmitTransition(() => {
+      formAction(fd);
+    });
   };
 
   return (

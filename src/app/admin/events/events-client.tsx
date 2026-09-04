@@ -64,6 +64,7 @@ export function EventsClient({ data, total, page, totalPages, filters }: EventsC
   const [createState, createFormAction, isCreating] = useActionState(createEvent, {});
   const [updateState, updateFormAction, isUpdating] = useActionState(updateEvent, {});
   const [isDeleting, startDeleteTransition] = useTransition();
+  const [, startSubmitTransition] = useTransition();
 
   const form = useForm<FormData>({
     resolver: zodResolver(eventSchema),
@@ -159,12 +160,14 @@ export function EventsClient({ data, total, page, totalPages, filters }: EventsC
         fd.set(key, String(value));
       }
     });
-    if (editingItem) {
-      fd.set("id", editingItem.id);
-      updateFormAction(fd);
-    } else {
-      createFormAction(fd);
-    }
+    startSubmitTransition(() => {
+      if (editingItem) {
+        fd.set("id", editingItem.id);
+        updateFormAction(fd);
+      } else {
+        createFormAction(fd);
+      }
+    });
   });
 
   const columns: Column<Event>[] = [

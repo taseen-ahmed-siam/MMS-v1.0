@@ -66,6 +66,7 @@ export function CommitteeClient({ data }: CommitteeClientProps) {
   const [createState, createFormAction, isCreating] = useActionState(createCommitteeMember, {});
   const [updateState, updateFormAction, isUpdating] = useActionState(updateCommitteeMember, {});
   const [isDeleting, startDeleteTransition] = useTransition();
+  const [, startSubmitTransition] = useTransition();
 
   const form = useForm<FormData>({
     resolver: zodResolver(committeeMemberSchema) as never,
@@ -143,12 +144,14 @@ export function CommitteeClient({ data }: CommitteeClientProps) {
         fd.set(key, String(value));
       }
     });
-    if (editingItem) {
-      fd.set("id", editingItem.id);
-      updateFormAction(fd);
-    } else {
-      createFormAction(fd);
-    }
+    startSubmitTransition(() => {
+      if (editingItem) {
+        fd.set("id", editingItem.id);
+        updateFormAction(fd);
+      } else {
+        createFormAction(fd);
+      }
+    });
   });
 
   const filtered = data.filter((item) => {

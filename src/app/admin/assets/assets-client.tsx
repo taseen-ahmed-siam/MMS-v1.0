@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useActionState, useState, useEffect, useMemo, useRef } from "react";
+import { useActionState, useState, useEffect, useMemo, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -278,6 +278,7 @@ function AssetFormDialog({
 
   const action = editing ? updateAsset : createAsset;
   const [state, formAction, pending] = useActionState(action, initialState);
+  const [, startSubmitTransition] = useTransition();
 
   const {
     register,
@@ -340,7 +341,9 @@ function AssetFormDialog({
     });
     fd.set("current_condition", condition);
     fd.set("category", categoryValue);
-    formAction(fd);
+    startSubmitTransition(() => {
+      formAction(fd);
+    });
   };
 
   return (

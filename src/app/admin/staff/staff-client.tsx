@@ -60,6 +60,7 @@ export function StaffClient({ data, total, page, totalPages, filters }: StaffCli
   const [createState, createFormAction, isCreating] = useActionState(createStaff, {});
   const [updateState, updateFormAction, isUpdating] = useActionState(updateStaff, {});
   const [isDeleting, startDeleteTransition] = useTransition();
+  const [, startSubmitTransition] = useTransition();
 
   const form = useForm<FormData>({
     resolver: zodResolver(staffSchema),
@@ -151,12 +152,14 @@ export function StaffClient({ data, total, page, totalPages, filters }: StaffCli
         fd.set(key, String(value));
       }
     });
-    if (editingItem) {
-      fd.set("id", editingItem.id);
-      updateFormAction(fd);
-    } else {
-      createFormAction(fd);
-    }
+    startSubmitTransition(() => {
+      if (editingItem) {
+        fd.set("id", editingItem.id);
+        updateFormAction(fd);
+      } else {
+        createFormAction(fd);
+      }
+    });
   });
 
   const columns: Column<Staff>[] = [

@@ -33,7 +33,7 @@ function FormDialog({
 }: FormDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cn("sm:max-w-lg rounded-2xl", className)}>
+      <DialogContent className={cn("sm:max-w-md rounded-2xl", className)}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}

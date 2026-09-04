@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useActionState, useState, useEffect, useRef } from "react";
+import { useActionState, useState, useEffect, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -255,6 +255,7 @@ function DocumentFormDialog({
   onOpenChangeRef.current = onOpenChange;
 
   const [state, formAction, pending] = useActionState(createDocument, initialState);
+  const [, startSubmitTransition] = useTransition();
 
   const {
     register,
@@ -297,7 +298,9 @@ function DocumentFormDialog({
     fd.set("access_level", accessLevel);
     fd.set("category", categoryValue);
     fd.set("file_url", fileUrl);
-    formAction(fd);
+    startSubmitTransition(() => {
+      formAction(fd);
+    });
   };
 
   return (

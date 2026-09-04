@@ -22,7 +22,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  return supabaseResponse;
+  const response = supabaseResponse;
+  response.headers.set("x-pathname", pathname);
+  return response;
 }
 
 export const config = {

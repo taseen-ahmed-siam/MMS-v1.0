@@ -1,5 +1,6 @@
 import { requireAuth, getProfile } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { AdminShell } from "@/components/admin/admin-shell";
 
 export default async function AdminLayout({
@@ -7,6 +8,13 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") ?? "";
+
+  if (pathname.startsWith("/admin/forbidden")) {
+    return <>{children}</>;
+  }
+
   const user = await requireAuth();
   const profile = await getProfile(user.id);
 

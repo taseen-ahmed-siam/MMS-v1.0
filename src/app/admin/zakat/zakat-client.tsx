@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -78,6 +78,7 @@ export function ZakatClient({ collections, beneficiaries, distributions }: Zakat
   const [collectionState, collectionFormAction, isCreatingCollection] = useActionState(createZakatCollection, {});
   const [beneficiaryState, beneficiaryFormAction, isCreatingBeneficiary] = useActionState(createZakatBeneficiary, {});
   const [distributionState, distributionFormAction, isCreatingDistribution] = useActionState(createZakatDistribution, {});
+  const [, startSubmitTransition] = useTransition();
 
   const collectionForm = useForm<CollectionFormData>({
     resolver: zodResolver(zakatCollectionSchema),
@@ -189,7 +190,9 @@ export function ZakatClient({ collections, beneficiaries, distributions }: Zakat
     Object.entries(data).forEach(([key, value]) => {
       if (value !== null && value !== undefined) fd.set(key, String(value));
     });
-    collectionFormAction(fd);
+    startSubmitTransition(() => {
+      collectionFormAction(fd);
+    });
   });
 
   const onBeneficiarySubmit = beneficiaryForm.handleSubmit((data) => {
@@ -197,7 +200,9 @@ export function ZakatClient({ collections, beneficiaries, distributions }: Zakat
     Object.entries(data).forEach(([key, value]) => {
       if (value !== null && value !== undefined) fd.set(key, String(value));
     });
-    beneficiaryFormAction(fd);
+    startSubmitTransition(() => {
+      beneficiaryFormAction(fd);
+    });
   });
 
   const onDistributionSubmit = distributionForm.handleSubmit((data) => {
@@ -205,7 +210,9 @@ export function ZakatClient({ collections, beneficiaries, distributions }: Zakat
     Object.entries(data).forEach(([key, value]) => {
       if (value !== null && value !== undefined) fd.set(key, String(value));
     });
-    distributionFormAction(fd);
+    startSubmitTransition(() => {
+      distributionFormAction(fd);
+    });
   });
 
   return (

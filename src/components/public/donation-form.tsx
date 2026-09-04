@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { HandCoins } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -35,9 +35,17 @@ export function DonationForm({ funds, settings }: DonationFormProps) {
     resolver: zodResolver(donationSchema) as never,
   });
 
+  const didScroll = useRef(false);
+
+  useEffect(() => {
+    if (state.success && !didScroll.current) {
+      didScroll.current = true;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [state.success]);
+
   if (state.success) {
-    return (
-      <div className="text-center py-10">
+    return (      <div className="text-center py-10">
         <div className="h-16 w-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
           <HandCoins className="h-8 w-8 text-success" />
         </div>
@@ -86,6 +94,7 @@ export function DonationForm({ funds, settings }: DonationFormProps) {
         ]}
         placeholder="Select a fund (optional)"
       />
+      <input type="hidden" {...register("fund_id")} />
 
       <div>
         <Label>Amount ({CURRENCY_SYMBOL})</Label>
@@ -161,6 +170,7 @@ export function DonationForm({ funds, settings }: DonationFormProps) {
         placeholder="Select payment method"
         required
       />
+      <input type="hidden" {...register("payment_method")} />
 
       <FormInput
         label="Transaction / Reference ID"

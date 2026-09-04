@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Save } from "lucide-react";
@@ -40,6 +40,7 @@ export function RolesClient({ roles, permissions, rolePermissions }: RolesClient
   const [selected, setSelected] = useState<string[]>([]);
 
   const [state, formAction, isSaving] = useActionState(saveRolePermissions, {});
+  const [, startSubmitTransition] = useTransition();
 
   useEffect(() => {
     if (state.success) {
@@ -89,7 +90,9 @@ export function RolesClient({ roles, permissions, rolePermissions }: RolesClient
     const fd = new FormData();
     fd.set("role_id", selectedRole.id);
     selected.forEach((pid) => fd.append("permissions", pid));
-    formAction(fd);
+    startSubmitTransition(() => {
+      formAction(fd);
+    });
   };
 
   const columns: Column<Role>[] = [
