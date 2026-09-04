@@ -144,3 +144,54 @@ export async function getFundBySlug(slug: string): Promise<DonationFund | null> 
     .maybeSingle();
   return data as DonationFund | null;
 }
+
+export interface GalleryImage {
+  src: string;
+  alt: string;
+  category: string;
+}
+
+export async function getGalleryImages(): Promise<GalleryImage[]> {
+  const supabase = await createClient();
+
+  const [events, funds, khutbahs] = await Promise.all([
+    supabase
+      .from("events")
+      .select("title, featured_image")
+      .eq("status", "published")
+      .not("featured_image", "is", null)
+      .limit(20),
+    supabase
+      .from("donation_funds")
+      .select("name, image_url")
+      .eq("is_visible", true)
+      .not("image_url", "is", null)
+      .limit(20),
+    supabase
+      .from("khutbahs")
+      .select("title, thumbnail_url")
+      .eq("status", "published")
+      .not("thumbnail_url", "is", null)
+      .limit(20),
+  ]);
+
+  const out: GalleryImage[] = [
+    ...((events.data ?? []) as { title: string; featured_image: string }[]).map((e) => ({
+      src: e.featured_image,
+      alt: e.title,
+      category: "Events",
+    })),
+    ...((funds.data ?? []) as { name: string; image_url: string }[]).map((f) => ({
+      src: f.image_url,
+      alt: f.name,
+      category: "Projects",
+    })),
+    ...((khutbahs.data ?? []) as { title: string; thumbnail_url: string }[]).map((k) => ({
+      src: k.thumbnail_url,
+      alt: k.title,
+      category: "Khutbah",
+    })),
+  ];
+
+  return out;
+}

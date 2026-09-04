@@ -241,7 +241,7 @@ export function EventsClient({ data, total, page, totalPages, filters }: EventsC
         footer={
           <div className="flex w-full gap-2 sm:justify-end">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <FormSubmitButton loading={isCreating || isUpdating}>
+            <FormSubmitButton loading={isCreating || isUpdating} form="event-form">
               {editingItem ? "Update" : "Create"}
             </FormSubmitButton>
           </div>

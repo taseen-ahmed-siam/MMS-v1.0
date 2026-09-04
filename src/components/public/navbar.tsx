@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils/format";
-import { CrescentStar } from "@/components/public/islamic";
 import type { MosqueSetting } from "@/types/database";
 
 interface NavbarProps {
@@ -21,6 +20,8 @@ const navLinks = [
   { label: "Gallery", href: "/gallery" },
   { label: "Contact", href: "/contact" },
 ];
+
+const desktopHiddenLinks = new Set(["/about", "/prayer-times", "/contact"]);
 
 export function Navbar({ settings }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -50,30 +51,27 @@ export function Navbar({ settings }: NavbarProps) {
         )}
       >
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#C8A951] shadow-inner">
-              <CrescentStar className="h-5 w-5 text-[#065F46]" size="h-5 w-4" />
-            </span>
-            <span className="flex flex-col justify-center leading-tight">
-              <span className="text-lg font-bold text-gold-gradient">{mosqueName}</span>
-            </span>
+          <Link href="/" className="flex items-center">
+            <span className="text-lg font-bold text-gold-gradient">{mosqueName}</span>
           </Link>
 
           <div className="hidden items-center gap-1 lg:flex">
-            {navLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  pathname === link.href
-                    ? "bg-white/15 text-white"
-                    : "text-emerald-100 hover:bg-white/10 hover:text-white"
-                )}
-              >
-                {link.label}
-              </Link>
-            ))}
+            {navLinks
+              .filter((link) => !desktopHiddenLinks.has(link.href))
+              .map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    pathname === link.href
+                      ? "bg-white/15 text-white"
+                      : "text-emerald-100 hover:bg-white/10 hover:text-white"
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))}
             <Link
               href="/donate"
               className={cn(
@@ -119,10 +117,7 @@ export function Navbar({ settings }: NavbarProps) {
         )}
       >
         <div className="flex h-16 items-center justify-between border-b border-[#C8A951]/40 px-4">
-          <span className="flex items-center gap-2 text-lg font-bold text-gold-gradient">
-            <CrescentStar className="h-5 w-4" />
-            Menu
-          </span>
+          <span className="text-lg font-bold text-gold-gradient">Menu</span>
           <button
             onClick={() => setMobileOpen(false)}
             className="rounded-lg p-2 text-white hover:bg-white/10"

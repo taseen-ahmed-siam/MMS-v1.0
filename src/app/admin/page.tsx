@@ -149,7 +149,7 @@ export default async function AdminDashboard() {
           </div>
           <ul className="divide-y">
             {recentExpenses.length === 0 && (
-              <li className="text-muted-foreground text-sm py-4">No expenses recorded yet.</li>
+              <li className="text-muted-foreground text-sm py-4 text-center">No expenses recorded yet.</li>
             )}
             {recentExpenses.map((e) => (
               <li key={e.id} className="py-3 flex items-center justify-between">
@@ -175,7 +175,7 @@ export default async function AdminDashboard() {
           </div>
           <ul className="divide-y">
             {newMembers.length === 0 && (
-              <li className="text-muted-foreground text-sm py-4">No members yet.</li>
+              <li className="text-muted-foreground text-sm py-4 text-center">No members yet.</li>
             )}
             {newMembers.map((m) => (
               <li key={m.id} className="py-3 flex items-center justify-between">

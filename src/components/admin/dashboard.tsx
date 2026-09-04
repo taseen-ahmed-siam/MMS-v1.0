@@ -20,7 +20,7 @@ import {
   ArrowUpFromLine,
   Wallet,
   Users,
-  PiggyBank,
+  Landmark,
   CalendarDays,
   Inbox,
   Megaphone,
@@ -35,7 +35,7 @@ const STAT_ICONS: Record<string, LucideIcon> = {
   expenses: ArrowUpFromLine,
   balance: Wallet,
   members: Users,
-  funds: PiggyBank,
+  funds: Landmark,
   events: CalendarDays,
   requests: Inbox,
 };

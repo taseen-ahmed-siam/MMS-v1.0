@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { AdminSidebar } from "@/components/admin/sidebar";
 import { AdminHeader } from "@/components/admin/admin-header";
-import { cn } from "@/lib/utils/format";
 import {
   Sheet,
   SheetContent,
@@ -43,12 +42,7 @@ export function AdminShell({ user, children }: AdminShellProps) {
           onToggleSidebar={() => setCollapsed((p) => !p)}
           onToggleMobile={() => setMobileOpen((p) => !p)}
         />
-        <main
-          className={cn(
-            "flex-1 overflow-y-auto p-6 transition-all duration-300",
-            collapsed ? "lg:ml-16" : "lg:ml-64"
-          )}
-        >
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 transition-all duration-300">
           {children}
         </main>
       </div>

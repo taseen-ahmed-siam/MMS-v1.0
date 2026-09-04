@@ -220,7 +220,7 @@ export function CommitteeClient({ data }: CommitteeClientProps) {
         footer={
           <div className="flex w-full gap-2 sm:justify-end">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-            <FormSubmitButton loading={isCreating || isUpdating}>
+            <FormSubmitButton loading={isCreating || isUpdating} form="committee-form">
               {editingItem ? "Update" : "Create"}
             </FormSubmitButton>
           </div>

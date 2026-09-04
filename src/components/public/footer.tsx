@@ -1,7 +1,5 @@
 import Link from "next/link";
 import { Mail, Phone, MapPin } from "lucide-react";
-import { cn } from "@/lib/utils/format";
-import { CrescentStar, Bismillah, OrnamentalDivider } from "@/components/public/islamic";
 import type { MosqueSetting } from "@/types/database";
 
 interface FooterProps {
@@ -25,18 +23,9 @@ export function Footer({ settings }: FooterProps) {
     <footer className="relative bg-[#043d2e] text-emerald-100 islamic-star-pattern-gold">
       <div className="absolute inset-0 bg-gradient-to-b from-[#043d2e]/95 to-[#043d2e]" />
       <div className="relative mx-auto max-w-7xl px-4 pt-14 pb-8 sm:px-6 lg:px-8">
-        <div className="mb-10 flex flex-col items-center text-center">
-          <Bismillah className="text-2xl sm:text-3xl" />
-          <OrnamentalDivider tone="light" className="mt-4 w-full max-w-md" />
-        </div>
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-4">
-            <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#C8A951]">
-                <CrescentStar className="h-5 w-4 text-[#064E3B]" />
-              </span>
-              <span className="text-lg font-bold text-gold-gradient">{mosqueName}</span>
-            </div>
+            <span className="text-lg font-bold text-gold-gradient">{mosqueName}</span>
             <p className="text-sm leading-relaxed text-emerald-200/80">
               {settings?.footer_text ??
                 "A welcoming place of worship, learning, and community service. Join us for prayers, programs, and events."}
