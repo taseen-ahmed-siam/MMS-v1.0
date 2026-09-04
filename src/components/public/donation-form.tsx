@@ -45,15 +45,15 @@ export function DonationForm({ funds, settings }: DonationFormProps) {
     switch (paymentMethod) {
       case "bkash":
         return settings?.bkash_number
-          ? { title: "bKash Number", value: settings.bkash_number }
+          ? { title: "bKash Number (Personal)", value: settings.bkash_number }
           : null;
       case "nagad":
         return settings?.nagad_number
-          ? { title: "Nagad Number", value: settings.nagad_number }
+          ? { title: "Nagad Number (Personal)", value: settings.nagad_number }
           : null;
       case "rocket":
         return settings?.rocket_number
-          ? { title: "Rocket Number", value: settings.rocket_number }
+          ? { title: "Rocket Number (Personal)", value: settings.rocket_number }
           : null;
       case "bank_transfer":
         return settings?.bank_details

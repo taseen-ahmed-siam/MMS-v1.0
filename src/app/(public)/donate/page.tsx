@@ -45,13 +45,13 @@ export default async function DonatePage() {
               )}
               {settings?.nagad_number && (
                 <div>
-                  <p className="font-medium text-emerald-700">Nagad</p>
+                  <p className="font-medium text-emerald-700">Nagad (Personal)</p>
                   <p className="text-muted-foreground">{settings.nagad_number}</p>
                 </div>
               )}
               {settings?.rocket_number && (
                 <div>
-                  <p className="font-medium text-emerald-700">Rocket</p>
+                  <p className="font-medium text-emerald-700">Rocket (Personal)</p>
                   <p className="text-muted-foreground">{settings.rocket_number}</p>
                 </div>
               )}
