@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { addMinutesToTime, localDate, syncRealPrayerTimes } from "@/lib/prayer-times";
+import { addMinutesToTime, localDate, localDateInTimeZone, syncRealPrayerTimes } from "@/lib/prayer-times";
 import type {
   MosqueSetting,
   PrayerTime,
@@ -21,9 +21,9 @@ export async function getMosqueSettings(): Promise<MosqueSetting | null> {
   return data as MosqueSetting | null;
 }
 
-export async function getTodayPrayerTimes(date?: string): Promise<PrayerTime | null> {
+export async function getTodayPrayerTimes(date?: string, timezone?: string): Promise<PrayerTime | null> {
   const supabase = await createClient();
-  const targetDate = date || localDate(new Date());
+  const targetDate = date || (timezone ? localDateInTimeZone(new Date(), timezone) : localDate(new Date()));
   await syncRealPrayerTimes([targetDate]);
   const { data } = await supabase
     .from("prayer_times")

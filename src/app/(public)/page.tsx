@@ -2,9 +2,11 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { Clock, Calendar, MapPin, Users, HandCoins, Landmark, Heart } from "lucide-react";
 import { getMosqueSettings, getTodayPrayerTimes, getLatestJummah, getPublishedAnnouncements, getUpcomingEvents, getLatestKhutbahs, getCurrentCommittee, getVisibleFunds } from "@/lib/queries/public";
+import { MOSQUE_TIMEZONE } from "@/lib/prayer-times";
 import { SectionHeading } from "@/components/public/section-heading";
 import { PrayerCard } from "@/components/public/prayer-card";
-import { CountdownTimer } from "@/components/public/countdown-timer";
+import { NextPrayerCountdown } from "@/components/public/next-prayer-countdown";
+import type { PrayerSlot } from "@/components/public/next-prayer-countdown";
 import { Bismillah, OrnamentalDivider } from "@/components/public/islamic";
 import { formatTime, getHijriDate, formatDate } from "@/lib/utils/format";
 import { CURRENCY_SYMBOL } from "@/constants";
@@ -17,7 +19,8 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const settings = await getMosqueSettings();
-  const prayerTime = await getTodayPrayerTimes();
+  const timezone = settings?.timezone || MOSQUE_TIMEZONE;
+  const prayerTime = await getTodayPrayerTimes(undefined, timezone);
   const jummah = await getLatestJummah();
   const announcements = await getPublishedAnnouncements(3);
   const events = await getUpcomingEvents(3);
@@ -27,7 +30,16 @@ export default async function HomePage() {
 
   const today = new Date();
 
-  const nextPrayer = getNextPrayerFromTimes(prayerTime);
+  const prayerSlots: PrayerSlot[] = prayerTime
+    ? [
+        { name: "Fajr", time: prayerTime.fajr_jamaat || prayerTime.fajr_adhan },
+        { name: "Sunrise", time: prayerTime.sunrise },
+        { name: "Dhuhr", time: prayerTime.dhuhr_jamaat || prayerTime.dhuhr_adhan },
+        { name: "Asr", time: prayerTime.asr_jamaat || prayerTime.asr_adhan },
+        { name: "Maghrib", time: prayerTime.maghrib_jamaat || prayerTime.maghrib_adhan },
+        { name: "Isha", time: prayerTime.isha_jamaat || prayerTime.isha_adhan },
+      ].filter((p): p is PrayerSlot => Boolean(p.time))
+    : [];
 
   return (
     <div>
@@ -83,22 +95,10 @@ export default async function HomePage() {
           </div>
 
           {/* NEXT PRAYER */}
-          {nextPrayer && (
+          {prayerSlots.length > 0 && (
             <div className="mt-12 max-w-xl mx-auto">
               <div className="bg-white/10 backdrop-blur rounded-2xl p-6">
-                <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
-                  <div>
-                    <p className="text-3xl font-bold text-accent">{nextPrayer.name}</p>
-                    <p className="text-sm text-emerald-100 mt-1">
-                      {nextPrayer.time && nextPrayer.time !== "tomorrow"
-                        ? `at ${formatTime(nextPrayer.time)}`
-                        : "(after Isha, until tomorrow Fajr)"}
-                    </p>
-                  </div>
-                  {nextPrayer.time && nextPrayer.time !== "tomorrow" && (
-                    <CountdownTimer nextPrayerTime={nextPrayer.time} nextPrayerName={nextPrayer.name} />
-                  )}
-                </div>
+                <NextPrayerCountdown prayers={prayerSlots} timezone={timezone} />
               </div>
             </div>
           )}
@@ -119,8 +119,8 @@ export default async function HomePage() {
             </div>
 
             {jummah.length > 0 && (
-              <div className="mt-8 grid md:grid-cols-2 gap-4">
-                {jummah.slice(0, 2).map((j) => (
+              <div className="mt-8 grid md:grid-cols-1 gap-4">
+                {jummah.slice(0, 1).map((j) => (
                   <div key={j.id} className="bg-card rounded-2xl p-5 shadow-sm border">
                     <div className="flex items-center gap-3 mb-2">
                       <Landmark className="text-accent h-5 w-5" />
@@ -377,30 +377,4 @@ export default async function HomePage() {
       </section>
     </div>
   );
-}
-
-function getNextPrayerFromTimes(
-  prayerTime: import("@/types/database").PrayerTime | null
-): { name: string; time: string | null } | null {
-  if (!prayerTime) return null;
-  const now = new Date();
-  const currentMin = now.getHours() * 60 + now.getMinutes();
-
-  const prayers: { key: string; name: string; time: string }[] = [
-    { key: "fajr", name: "Fajr", time: prayerTime.fajr_jamaat || prayerTime.fajr_adhan },
-    { key: "sunrise", name: "Sunrise", time: prayerTime.sunrise },
-    { key: "dhuhr", name: "Dhuhr", time: prayerTime.dhuhr_jamaat || prayerTime.dhuhr_adhan },
-    { key: "asr", name: "Asr", time: prayerTime.asr_jamaat || prayerTime.asr_adhan },
-    { key: "maghrib", name: "Maghrib", time: prayerTime.maghrib_jamaat || prayerTime.maghrib_adhan },
-    { key: "isha", name: "Isha", time: prayerTime.isha_jamaat || prayerTime.isha_adhan },
-  ];
-
-  for (const p of prayers) {
-    const [h, m] = p.time.split(":").map(Number);
-    const prayerMin = h * 60 + m;
-    if (prayerMin > currentMin) {
-      return { name: p.name, time: p.time };
-    }
-  }
-  return { name: "Fajr", time: "tomorrow" };
 }

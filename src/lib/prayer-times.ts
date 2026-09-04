@@ -1,11 +1,17 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  MOSQUE_TIMEZONE,
+  localDateInTimeZone,
+  timePartsInTimeZone,
+} from "@/lib/utils/time-zone";
 import type { MosqueSetting } from "@/types/database";
+
+export { MOSQUE_TIMEZONE, localDateInTimeZone, timePartsInTimeZone };
 
 export const MOSQUE_LATITUDE = 23.7018;
 export const MOSQUE_LONGITUDE = 90.3742;
-export const MOSQUE_TIMEZONE = "Asia/Dhaka";
 
 const JAMAA_OFFSET_MINUTES: Record<string, number> = {
   fajr: 15,

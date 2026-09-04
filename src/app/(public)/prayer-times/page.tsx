@@ -1,14 +1,17 @@
 import { Metadata } from "next";
 import { Clock, Calendar } from "lucide-react";
 import {
+  getMosqueSettings,
   getTodayPrayerTimes,
   getRecentPrayerDates,
   getLatestJummah,
 } from "@/lib/queries/public";
+import { MOSQUE_TIMEZONE } from "@/lib/prayer-times";
 import { PageHeader } from "@/components/public/page-header";
 import { SectionHeading } from "@/components/public/section-heading";
 import { PrayerCard } from "@/components/public/prayer-card";
-import { CountdownTimer } from "@/components/public/countdown-timer";
+import { NextPrayerCountdown } from "@/components/public/next-prayer-countdown";
+import type { PrayerSlot } from "@/components/public/next-prayer-countdown";
 import { formatTime, formatDate } from "@/lib/utils/format";
 
 export const metadata: Metadata = {
@@ -17,47 +20,23 @@ export const metadata: Metadata = {
     "View today's prayer times, weekly schedule, and Jumu'ah congregation timings at Al-Noor Mosque.",
 };
 
-function getNextPrayerFromTimes(prayerTime: {
-  fajr_jamaat: string;
-  fajr_adhan: string;
-  sunrise: string;
-  dhuhr_jamaat: string;
-  dhuhr_adhan: string;
-  asr_jamaat: string;
-  asr_adhan: string;
-  maghrib_jamaat: string;
-  maghrib_adhan: string;
-  isha_jamaat: string;
-  isha_adhan: string;
-}): { name: string; time: string } | null {
-  const now = new Date();
-  const currentMin = now.getHours() * 60 + now.getMinutes();
-
-  const prayers: { name: string; time: string }[] = [
-    { name: "Fajr", time: prayerTime.fajr_jamaat || prayerTime.fajr_adhan },
-    { name: "Sunrise", time: prayerTime.sunrise },
-    { name: "Dhuhr", time: prayerTime.dhuhr_jamaat || prayerTime.dhuhr_adhan },
-    { name: "Asr", time: prayerTime.asr_jamaat || prayerTime.asr_adhan },
-    { name: "Maghrib", time: prayerTime.maghrib_jamaat || prayerTime.maghrib_adhan },
-    { name: "Isha", time: prayerTime.isha_jamaat || prayerTime.isha_adhan },
-  ];
-
-  for (const p of prayers) {
-    const [h, m] = p.time.split(":").map(Number);
-    const prayerMin = h * 60 + m;
-    if (prayerMin > currentMin) {
-      return { name: p.name, time: p.time };
-    }
-  }
-  return null;
-}
-
 export default async function PrayerTimesPage() {
-  const todayPrayer = await getTodayPrayerTimes();
+  const settings = await getMosqueSettings();
+  const timezone = settings?.timezone || MOSQUE_TIMEZONE;
+  const todayPrayer = await getTodayPrayerTimes(undefined, timezone);
   const recentDates = await getRecentPrayerDates(7);
   const jummah = await getLatestJummah();
 
-  const nextPrayer = todayPrayer ? getNextPrayerFromTimes(todayPrayer) : null;
+  const prayerSlots: PrayerSlot[] = todayPrayer
+    ? [
+        { name: "Fajr", time: todayPrayer.fajr_jamaat || todayPrayer.fajr_adhan },
+        { name: "Sunrise", time: todayPrayer.sunrise },
+        { name: "Dhuhr", time: todayPrayer.dhuhr_jamaat || todayPrayer.dhuhr_adhan },
+        { name: "Asr", time: todayPrayer.asr_jamaat || todayPrayer.asr_adhan },
+        { name: "Maghrib", time: todayPrayer.maghrib_jamaat || todayPrayer.maghrib_adhan },
+        { name: "Isha", time: todayPrayer.isha_jamaat || todayPrayer.isha_adhan },
+      ].filter((p): p is PrayerSlot => Boolean(p.time))
+    : [];
 
   return (
     <div>
@@ -68,13 +47,10 @@ export default async function PrayerTimesPage() {
       />
 
       {/* NEXT PRAYER COUNTDOWN */}
-      {nextPrayer && (
+      {prayerSlots.length > 0 && (
         <section className="bg-gradient-to-br from-[#064E3B] via-[#065F46] to-[#043d2e] py-10 islamic-pattern-dark">
           <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-            <CountdownTimer
-              nextPrayerTime={nextPrayer.time}
-              nextPrayerName={nextPrayer.name}
-            />
+            <NextPrayerCountdown prayers={prayerSlots} timezone={timezone} />
           </div>
         </section>
       )}
