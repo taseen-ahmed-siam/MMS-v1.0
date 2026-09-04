@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type {
   Donation,
   Expense,
@@ -30,7 +31,7 @@ function isToday(dateStr: string | null | undefined) {
 }
 
 export async function getDashboardStats() {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const today = new Date();
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1)
     .toISOString()
@@ -191,7 +192,7 @@ export async function getNewMembers(limit = 5) {
   return (data as Member[]) ?? [];
 }
 
-export async function getRecentActivity(limit = 8) {
+export async function getRecentActivity(limit = 5) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("audit_logs")
@@ -724,9 +725,9 @@ export async function getRoles() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("roles")
-    .select("*, permissions(name)")
+    .select("*")
     .order("name", { ascending: true });
-  return (data as (Role & { permissions: { name: string }[] })[]) ?? [];
+  return (data as Role[]) ?? [];
 }
 
 export async function getAllPermissions() {

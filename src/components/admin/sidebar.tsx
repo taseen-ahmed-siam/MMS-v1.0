@@ -29,10 +29,12 @@ import {
   Settings,
   type LucideIcon,
 } from "lucide-react";
+import { navItemAllowed } from "@/lib/permissions";
 
 interface SidebarProps {
   collapsed: boolean;
   onNavigate: () => void;
+  role?: string | null;
 }
 
 interface NavItem {
@@ -135,13 +137,20 @@ function SidebarLink({
   );
 }
 
-export function AdminSidebar({ collapsed, onNavigate }: SidebarProps) {
+export function AdminSidebar({ collapsed, onNavigate, role }: SidebarProps) {
   const pathname = usePathname();
 
   function isActive(href: string) {
     if (href === "/admin") return pathname === "/admin";
     return pathname.startsWith(href);
   }
+
+  const visibleGroups = navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => navItemAllowed(role, item.href)),
+    }))
+    .filter((group) => group.items.length > 0);
 
   return (
     <div
@@ -167,14 +176,14 @@ export function AdminSidebar({ collapsed, onNavigate }: SidebarProps) {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-4">
-        {navGroups.map((group) => (
+        {visibleGroups.map((group) => (
           <div key={group.label} className="mb-4">
             {!collapsed && (
               <div className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-white/40">
                 {group.label}
               </div>
             )}
-            {collapsed && group.label !== navGroups[0].label && (
+            {collapsed && group.label !== visibleGroups[0].label && (
               <div className="my-2 mx-3 h-px bg-white/10" />
             )}
             <div className="space-y-0.5">

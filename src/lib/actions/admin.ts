@@ -26,6 +26,7 @@ import {
   prayerTimeSchema,
 } from "@/lib/validations";
 import { slugify } from "@/lib/utils/format";
+import { roleHasPermission } from "@/lib/permissions";
 import type { Expense } from "@/types/database";
 
 type ActionResult = { error?: string; success?: boolean; id?: string };
@@ -34,6 +35,20 @@ async function getCurrentUserId() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
   return data.user?.id ?? null;
+}
+
+async function getCurrentUserRole(): Promise<string | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  return profile?.role ?? null;
 }
 
 // ============================================================
@@ -138,6 +153,71 @@ export async function deleteDonation(formData: FormData) {
     entity: "donation",
     entityId: id,
     oldData: old as unknown as Record<string, unknown>,
+  });
+
+  revalidatePath("/admin/donations");
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+export async function approveDonation(formData: FormData) {
+  const actorRole = await getCurrentUserRole();
+  if (!roleHasPermission(actorRole, "donation.update")) {
+    return { error: "You are not allowed to approve donations" };
+  }
+  const id = formData.get("id") as string;
+  const supabase = await createAdminClient();
+  const { data: old } = await supabase.from("donations").select("*").eq("id", id).single();
+
+  const { error } = await supabase
+    .from("donations")
+    .update({ status: "completed", updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) return { error: error.message };
+
+  logAudit({
+    action: "approve",
+    module: "donation",
+    entity: "donation",
+    entityId: id,
+    oldData: old as unknown as Record<string, unknown>,
+    newData: { status: "completed" },
+  });
+
+  revalidatePath("/admin/donations");
+  revalidatePath("/admin");
+  return { success: true };
+}
+
+export async function rejectDonation(formData: FormData) {
+  const actorRole = await getCurrentUserRole();
+  if (!roleHasPermission(actorRole, "donation.update")) {
+    return { error: "You are not allowed to reject donations" };
+  }
+  const id = formData.get("id") as string;
+  const reason = (formData.get("reason") as string) || "Rejected";
+  const supabase = await createAdminClient();
+  const { data: old } = await supabase.from("donations").select("*").eq("id", id).single();
+
+  const { error } = await supabase
+    .from("donations")
+    .update({
+      status: "cancelled",
+      notes: old?.notes
+        ? `${old.notes}\nRejected: ${reason}`
+        : `Rejected: ${reason}`,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+  if (error) return { error: error.message };
+
+  logAudit({
+    action: "reject",
+    module: "donation",
+    entity: "donation",
+    entityId: id,
+    oldData: old as unknown as Record<string, unknown>,
+    newData: { status: "cancelled", reason },
   });
 
   revalidatePath("/admin/donations");
@@ -1109,6 +1189,11 @@ export async function updateSettings(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const actorRole = await getCurrentUserRole();
+  if (!roleHasPermission(actorRole, "settings.manage")) {
+    return { error: "You are not allowed to change settings" };
+  }
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = mosqueSettingsSchema.safeParse({
     ...raw,
@@ -1117,7 +1202,7 @@ export async function updateSettings(
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const { data: existing } = await supabase.from("mosque_settings").select("id").limit(1).maybeSingle();
 
   let error;
@@ -1208,9 +1293,75 @@ export async function createZakatDistribution(
 // USERS & ROLES
 // ============================================================
 
+export async function createUserAccount(formData: FormData) {
+  const actorRole = await getCurrentUserRole();
+  if (actorRole !== "super_admin") {
+    return { error: "Only the Super Admin can create accounts" };
+  }
+
+  const email = (formData.get("email") as string)?.trim();
+  const password = formData.get("password") as string;
+  const fullName = (formData.get("full_name") as string)?.trim() || email?.split("@")?.[0];
+  const role = (formData.get("role") as string) || "member";
+
+  if (!email || !password) return { error: "Email and password are required" };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "Please enter a valid email" };
+  if (password.length < 6) return { error: "Password must be at least 6 characters" };
+
+  const supabase = await createAdminClient();
+
+  const { data, error } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: fullName },
+  });
+
+  if (error) return { error: error.message };
+  if (!data.user) return { error: "Failed to create user" };
+
+  if (role && role !== "member") {
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ role })
+      .eq("id", data.user.id);
+    if (profileError) {
+      logAudit({
+        action: "create",
+        module: "users",
+        entity: "user",
+        entityId: data.user.id,
+        newData: { email, role: "member" },
+        oldData: null,
+      });
+      revalidatePath("/admin/users");
+      return { success: true, id: data.user.id };
+    }
+  }
+
+  logAudit({
+    action: "create",
+    module: "users",
+    entity: "user",
+    entityId: data.user.id,
+    newData: { email, role },
+  });
+
+  revalidatePath("/admin/users");
+  return { success: true, id: data.user.id };
+}
+
 export async function updateUserRole(formData: FormData) {
+  const actorRole = await getCurrentUserRole();
+  if (!actorRole || !["super_admin", "admin"].includes(actorRole)) {
+    return { error: "You are not allowed to change roles" };
+  }
+
   const userId = formData.get("id") as string;
   const role = formData.get("role") as string;
+  if (role === "super_admin" && actorRole !== "super_admin") {
+    return { error: "Only the Super Admin can assign the Super Admin role" };
+  }
   const supabase = await createClient();
 
   const { error } = await supabase.from("profiles").update({ role }).eq("id", userId);
@@ -1229,9 +1380,24 @@ export async function updateUserRole(formData: FormData) {
 }
 
 export async function toggleUserStatus(formData: FormData) {
+  const actorRole = await getCurrentUserRole();
+  if (!actorRole || !["super_admin", "admin"].includes(actorRole)) {
+    return { error: "You are not allowed to change user status" };
+  }
+
   const userId = formData.get("id") as string;
   const status = formData.get("status") as string;
   const supabase = await createClient();
+  if (actorRole !== "super_admin") {
+    const { data: target } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .single();
+    if (target?.role === "super_admin" || target?.role === "admin") {
+      return { error: "Only the Super Admin can change this user's status" };
+    }
+  }
 
   const { error } = await supabase.from("profiles").update({ status }).eq("id", userId);
   if (error) return { error: error.message };

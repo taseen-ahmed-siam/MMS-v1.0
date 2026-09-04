@@ -349,6 +349,7 @@ function IncomeFormDialog({
             options={[...PAYMENT_METHODS]}
             required
           />
+          <input type="hidden" {...register("payment_method")} />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <FormInput

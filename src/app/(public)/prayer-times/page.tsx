@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 function getNextPrayerFromTimes(prayerTime: {
   fajr_jamaat: string;
   fajr_adhan: string;
+  sunrise: string;
   dhuhr_jamaat: string;
   dhuhr_adhan: string;
   asr_jamaat: string;
@@ -34,7 +35,7 @@ function getNextPrayerFromTimes(prayerTime: {
 
   const prayers: { name: string; time: string }[] = [
     { name: "Fajr", time: prayerTime.fajr_jamaat || prayerTime.fajr_adhan },
-    { name: "Sunrise", time: prayerTime.fajr_jamaat || prayerTime.fajr_adhan },
+    { name: "Sunrise", time: prayerTime.sunrise },
     { name: "Dhuhr", time: prayerTime.dhuhr_jamaat || prayerTime.dhuhr_adhan },
     { name: "Asr", time: prayerTime.asr_jamaat || prayerTime.asr_adhan },
     { name: "Maghrib", time: prayerTime.maghrib_jamaat || prayerTime.maghrib_adhan },

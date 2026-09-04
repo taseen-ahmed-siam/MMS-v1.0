@@ -26,13 +26,13 @@ export function AdminShell({ user, children }: AdminShellProps) {
   return (
     <div className="flex h-screen overflow-hidden bg-[#FAF8F2]">
       <div className="hidden lg:flex lg:flex-col">
-        <AdminSidebar collapsed={collapsed} onNavigate={() => {}} />
+        <AdminSidebar collapsed={collapsed} onNavigate={() => {}} role={user.role} />
       </div>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="left" className="w-64 p-0" style={{ backgroundColor: "#064E3B" }}>
           <SheetTitle className="sr-only">Navigation</SheetTitle>
-          <AdminSidebar collapsed={false} onNavigate={() => setMobileOpen(false)} />
+          <AdminSidebar collapsed={false} onNavigate={() => setMobileOpen(false)} role={user.role} />
         </SheetContent>
       </Sheet>
 

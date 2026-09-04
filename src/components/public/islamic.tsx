@@ -93,6 +93,46 @@ export function CrescentStar({
 }
 
 /**
+ * Mosque silhouette (minarets + dome + crescent finial), outline style.
+ */
+export function MosqueIcon({
+  className,
+  size = "h-5 w-5",
+}: {
+  className?: string;
+  size?: string;
+}) {
+  return (
+    <span
+      className={cn("inline-flex items-center justify-center", size, className)}
+      aria-hidden="true"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-full w-full"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path d="M4 21h16" />
+        <path d="M7 21V8.5" />
+        <path d="M7 8.5 5.2 6h3.6z" />
+        <path d="M17 21V8.5" />
+        <path d="M17 8.5l-1.8-2.5h3.6z" />
+        <path d="M7.5 21v-4h9v4" />
+        <path d="M7.5 17h9" />
+        <path d="M7.5 17c.5-2.6 2.4-4.3 4.5-4.3s4 1.7 4.5 4.3z" />
+        <path d="M12 12.7v-2" />
+        <path d="M12 10.7c-1.1.2-1.9 1-1.9 2.1h3.8c0-1.1-.8-1.9-1.9-2.1z" />
+      </svg>
+    </span>
+  );
+}
+
+/**
  * Full-width decorative band that shows a calligraphic phrase over a pattern.
  * Used to frame section breaks across the site.
  */

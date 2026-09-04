@@ -26,6 +26,7 @@ import {
 import { getInitials } from "@/lib/utils/format";
 import { logoutAction } from "@/lib/auth/actions";
 import { CrescentStar } from "@/components/public/islamic";
+import { roleHasPermission } from "@/lib/permissions";
 
 interface AdminHeaderProps {
   user: {
@@ -100,6 +101,7 @@ export function AdminHeader({
 }: AdminHeaderProps) {
   const pathname = usePathname();
   const initials = getInitials(user.full_name);
+  const canManageSettings = roleHasPermission(user.role, "settings.manage");
 
   return (
     <header className="flex h-16 shrink-0 items-center border-b border-[#C8A951]/30 bg-white px-4 gap-3">
@@ -154,12 +156,14 @@ export function AdminHeader({
               View Site
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/admin/settings">
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
-            </Link>
-          </DropdownMenuItem>
+          {canManageSettings && (
+            <DropdownMenuItem asChild>
+              <Link href="/admin/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Link>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-destructive focus:text-destructive"

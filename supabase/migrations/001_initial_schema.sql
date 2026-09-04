@@ -614,10 +614,10 @@ CREATE OR REPLACE FUNCTION public.has_permission(permission_name TEXT)
 RETURNS BOOLEAN AS $$
 DECLARE
   user_role_id UUID;
-  is_super BOOLEAN;
+  user_role TEXT;
 BEGIN
-  SELECT p.role INTO is_super FROM public.profiles p WHERE p.id = auth.uid();
-  IF is_super = 'super_admin' THEN
+  SELECT p.role INTO user_role FROM public.profiles p WHERE p.id = auth.uid();
+  IF user_role = 'super_admin' THEN
     RETURN true;
   END IF;
 
@@ -680,6 +680,8 @@ ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 -- PUBLIC READ TABLE (anyone can read)
 -- mosque_settings: public read
 CREATE POLICY "mosque_settings_public_read" ON mosque_settings FOR SELECT USING (true);
+CREATE POLICY "mosque_settings_admin_update" ON mosque_settings FOR UPDATE USING (public.has_permission('settings.manage') OR public.current_user_role() = 'super_admin');
+CREATE POLICY "mosque_settings_admin_insert" ON mosque_settings FOR INSERT WITH CHECK (public.has_permission('settings.manage') OR public.current_user_role() = 'super_admin');
 
 -- prayer_times: public read
 CREATE POLICY "prayer_times_public_read" ON prayer_times FOR SELECT USING (true);

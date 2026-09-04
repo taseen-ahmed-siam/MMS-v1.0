@@ -82,6 +82,7 @@ export function ContactForm() {
         placeholder="Select request type"
         required
       />
+      <input type="hidden" {...register("request_type")} />
 
       <FormInput
         label="Subject"

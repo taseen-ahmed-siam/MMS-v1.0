@@ -53,23 +53,29 @@ export function StatsCard({
   icon: string;
   color: string;
   bg: string;
-  href: string;
+  href?: string;
 }) {
   const Icon = STAT_ICONS[icon] ?? HandCoins;
+  const inner = (
+    <div className="flex items-start justify-between">
+      <div>
+        <p className="text-sm text-muted-foreground">{title}</p>
+        <p className="text-2xl font-bold mt-1">{value}</p>
+      </div>
+      <div className={`h-11 w-11 rounded-xl ${bg} flex items-center justify-center`}>
+        <Icon className={`h-5 w-5 ${color}`} />
+      </div>
+    </div>
+  );
+  if (!href) {
+    return <div className="bg-card rounded-2xl border shadow-sm p-5">{inner}</div>;
+  }
   return (
     <Link
       href={href}
       className="bg-card rounded-2xl border shadow-sm p-5 hover:shadow-md transition-shadow"
     >
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <p className="text-2xl font-bold mt-1">{value}</p>
-        </div>
-        <div className={`h-11 w-11 rounded-xl ${bg} flex items-center justify-center`}>
-          <Icon className={`h-5 w-5 ${color}`} />
-        </div>
-      </div>
+      {inner}
     </Link>
   );
 }
@@ -126,7 +132,23 @@ export function RecentDonationsTable({
   }
   return (
     <div className="overflow-x-auto -mx-6 px-6">
-      <table className="w-full text-sm">
+      <ul className="divide-y sm:hidden">
+        {donations.map((d) => (
+          <li key={d.donor_name + d.amount} className="py-3 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-medium text-sm truncate">{d.donor_name}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {d.donation_funds?.name || "General"}
+              </p>
+            </div>
+            <div className="text-right shrink-0">
+              <p className="font-semibold text-sm whitespace-nowrap">{formatCurrency(d.amount)}</p>
+              <p className="text-xs capitalize whitespace-nowrap">{d.status}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <table className="w-full text-sm hidden sm:table">
         <thead>
           <tr className="border-b text-left text-xs text-muted-foreground">
             <th className="py-2 font-medium">Donor</th>

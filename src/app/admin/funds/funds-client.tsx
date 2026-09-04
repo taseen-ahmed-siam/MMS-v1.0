@@ -349,6 +349,7 @@ function FundFormDialog({
             options={FUND_STATUSES.map((s) => ({ value: s.value, label: s.label }))}
             required
           />
+          <input type="hidden" {...register("status")} />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <FormInput label="Start date" name="start_date" type="date" register={register("start_date")} />

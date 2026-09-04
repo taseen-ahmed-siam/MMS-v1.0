@@ -445,6 +445,7 @@ function ExpenseFormDialog({
           options={EXPENSE_CATEGORIES.map((c) => ({ value: c, label: c }))}
           required
         />
+        <input type="hidden" {...register("expense_category")} />
         <div className="grid grid-cols-2 gap-4">
           <FormInput label="Vendor" name="vendor" register={register("vendor")} />
           <FormInput
@@ -471,6 +472,7 @@ function ExpenseFormDialog({
             options={[...PAYMENT_METHODS]}
             required
           />
+          <input type="hidden" {...register("payment_method")} />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <FormInput label="Date" name="date" type="date" register={register("date")} error={errors.date?.message} required />

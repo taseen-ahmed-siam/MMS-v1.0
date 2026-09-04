@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { addMinutesToTime, localDate, syncRealPrayerTimes } from "@/lib/prayer-times";
 import type {
   MosqueSetting,
   PrayerTime,
@@ -22,7 +23,8 @@ export async function getMosqueSettings(): Promise<MosqueSetting | null> {
 
 export async function getTodayPrayerTimes(date?: string): Promise<PrayerTime | null> {
   const supabase = await createClient();
-  const targetDate = date || new Date().toISOString().split("T")[0];
+  const targetDate = date || localDate(new Date());
+  await syncRealPrayerTimes([targetDate]);
   const { data } = await supabase
     .from("prayer_times")
     .select("*")
@@ -33,10 +35,23 @@ export async function getTodayPrayerTimes(date?: string): Promise<PrayerTime | n
 
 export async function getRecentPrayerDates(limit = 7): Promise<PrayerTime[]> {
   const supabase = await createClient();
+  const today = new Date();
+  const start = new Date(today);
+  start.setDate(start.getDate() - (limit - 1));
+
+  const dates: string[] = [];
+  for (let i = 0; i < limit; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    dates.push(localDate(d));
+  }
+  await syncRealPrayerTimes(dates);
+
   const { data } = await supabase
     .from("prayer_times")
     .select("*")
-    .gte("date", new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0])
+    .gte("date", localDate(start))
+    .lte("date", localDate(today))
     .order("date", { ascending: true })
     .limit(limit);
   return (data as PrayerTime[]) ?? [];
@@ -44,13 +59,54 @@ export async function getRecentPrayerDates(limit = 7): Promise<PrayerTime[]> {
 
 export async function getLatestJummah(): Promise<JummahSchedule[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const today = new Date();
+
+  const fridays: Date[] = [];
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    if (d.getDay() === 5) fridays.push(d);
+  }
+  const fridayDates = fridays.map(localDate);
+  if (fridayDates.length === 0) return [];
+
+  await syncRealPrayerTimes(fridayDates);
+
+  const { data: ptRows } = await supabase
+    .from("prayer_times")
+    .select("date, dhuhr_jamaat")
+    .in("date", fridayDates);
+
+  const ptByDate = new Map<string, { date: string; dhuhr_jamaat: string | null }>(
+    (ptRows ?? []).map((p) => [p.date, p])
+  );
+
+  const derived: JummahSchedule[] = [];
+  for (const d of fridays) {
+    const dateIso = localDate(d);
+    const row = ptByDate.get(dateIso);
+    if (!row?.dhuhr_jamaat) continue;
+    derived.push({
+      id: `jummah-${dateIso}`,
+      date: dateIso,
+      session_number: 1,
+      khutbah_time: addMinutesToTime(row.dhuhr_jamaat, -30),
+      jamaat_time: row.dhuhr_jamaat,
+      imam_name: null,
+      notes: "auto",
+      created_at: "",
+      updated_at: "",
+    });
+  }
+  if (derived.length > 0) return derived;
+
+  const { data: fallback } = await supabase
     .from("jummah_schedules")
     .select("*")
-    .gte("date", new Date().toISOString().split("T")[0])
+    .gte("date", localDate(today))
     .order("date", { ascending: true })
     .limit(10);
-  return (data as JummahSchedule[]) ?? [];
+  return (fallback as JummahSchedule[]) ?? [];
 }
 
 export async function getPublishedAnnouncements(limit = 5): Promise<Announcement[]> {

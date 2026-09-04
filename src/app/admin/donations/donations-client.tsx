@@ -6,11 +6,17 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Check, X, RotateCcw } from "lucide-react";
 import { z } from "zod";
 
 import type { Donation, DonationFund } from "@/types/database";
-import { createDonation, updateDonation, deleteDonation } from "@/lib/actions/admin";
+import {
+  createDonation,
+  updateDonation,
+  deleteDonation,
+  approveDonation,
+  rejectDonation,
+} from "@/lib/actions/admin";
 import { donationSchema } from "@/lib/validations";
 import { DONATION_STATUSES, PAYMENT_METHODS } from "@/constants";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
@@ -24,6 +30,7 @@ import {
   FormInput,
   FormSelect,
   FormSubmitButton,
+  FormTextarea,
   ConfirmDialog,
   ErrorMessage,
   PageHeader,
@@ -72,6 +79,9 @@ export function DonationsClient({
   const [editing, setEditing] = useState<Donation | null>(null);
   const [deleting, setDeleting] = useState<Donation | null>(null);
   const [deletePending, setDeletePending] = useState(false);
+  const [rejecting, setRejecting] = useState<Donation | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [rejectPending, setRejectPending] = useState(false);
 
   const firstRender = useRef(true);
 
@@ -105,6 +115,36 @@ export function DonationsClient({
     } else {
       toast.success("Donation archived");
       setDeleting(null);
+      router.refresh();
+    }
+  };
+
+  const handleApprove = async (d: Donation) => {
+    const fd = new FormData();
+    fd.set("id", d.id);
+    const res = await approveDonation(fd);
+    if (res?.error) {
+      toast.error(res.error);
+    } else {
+      toast.success("Donation approved");
+      router.refresh();
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejecting) return;
+    setRejectPending(true);
+    const fd = new FormData();
+    fd.set("id", rejecting.id);
+    fd.set("reason", rejectReason);
+    const res = await rejectDonation(fd);
+    setRejectPending(false);
+    if (res?.error) {
+      toast.error(res.error);
+    } else {
+      toast.success("Donation rejected");
+      setRejecting(null);
+      setRejectReason("");
       router.refresh();
     }
   };
@@ -166,6 +206,32 @@ export function DonationsClient({
       header: "",
       cell: (d: Donation) => (
         <div className="flex items-center justify-end gap-1">
+          {d.status === "pending" && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleApprove(d);
+                }}
+                className="rounded-md p-1.5 text-green-600 hover:bg-green-50"
+                aria-label="Approve"
+                title="Approve"
+              >
+                <Check className="h-4 w-4" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setRejecting(d);
+                }}
+                className="rounded-md p-1.5 text-red-600 hover:bg-red-50"
+                aria-label="Reject"
+                title="Reject"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -253,6 +319,41 @@ export function DonationsClient({
         loading={deletePending}
         onConfirm={handleDelete}
       />
+
+      <FormDialog
+        open={!!rejecting}
+        onOpenChange={(o) => {
+          if (!o) {
+            setRejecting(null);
+            setRejectReason("");
+          }
+        }}
+        title="Reject donation"
+        description="Provide a reason for rejecting this donation."
+      >
+        <div className="space-y-4">
+          <FormTextarea
+            label="Rejection reason"
+            name="reason"
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            rows={3}
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setRejecting(null)}
+              className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
+            >
+              <RotateCcw className="h-4 w-4" />
+              Cancel
+            </button>
+            <FormSubmitButton loading={rejectPending} onClick={handleReject}>
+              Reject Donation
+            </FormSubmitButton>
+          </div>
+        </div>
+      </FormDialog>
     </div>
   );
 }
@@ -391,6 +492,7 @@ function DonationFormDialog({
           ]}
           placeholder="Select a fund (optional)"
         />
+        <input type="hidden" {...register("fund_id")} />
         <div className="grid grid-cols-2 gap-4">
           <FormInput
             label="Amount (৳)"
@@ -409,6 +511,7 @@ function DonationFormDialog({
             options={[...PAYMENT_METHODS]}
             required
           />
+          <input type="hidden" {...register("payment_method")} />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <FormInput

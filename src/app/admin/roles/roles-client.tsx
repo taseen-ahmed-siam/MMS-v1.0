@@ -31,10 +31,13 @@ interface RolesClientProps {
   roles: Role[];
   permissions: Permission[];
   rolePermissions: Record<string, string[]>;
+  currentRole?: string | null;
 }
 
-export function RolesClient({ roles, permissions, rolePermissions }: RolesClientProps) {
+export function RolesClient({ roles, permissions, rolePermissions, currentRole }: RolesClientProps) {
   const router = useRouter();
+
+  const canSavePermissions = currentRole === "super_admin";
 
   const [selectedRole, setSelectedRole] = useState<Role | null>(roles[0] ?? null);
   const [selected, setSelected] = useState<string[]>([]);
@@ -137,7 +140,7 @@ export function RolesClient({ roles, permissions, rolePermissions }: RolesClient
             emptyTitle="No role selected"
             emptyDescription="Select a role from the list to manage its permissions."
             actions={
-              selectedRole ? (
+              selectedRole && canSavePermissions ? (
                 (<Button size="sm" onClick={handleSave} disabled={isSaving}>
                   <Save className="h-4 w-4" />
                   {isSaving ? "Saving..." : "Save"}
@@ -147,6 +150,11 @@ export function RolesClient({ roles, permissions, rolePermissions }: RolesClient
           >
             {selectedRole && (
               <div className="divide-y p-4">
+                {!canSavePermissions && (
+                  <div className="rounded-lg bg-amber-50 text-amber-800 text-xs p-3 border border-amber-200 mb-3">
+                    Read-only — only the Super Admin can change permissions.
+                  </div>
+                )}
                 {grouped.map(([module, modulePermissions]) => {
                   const allChecked = isModuleAllChecked(modulePermissions);
                   const someChecked = modulePermissions.some((p) => selected.includes(p.id));
@@ -156,6 +164,7 @@ export function RolesClient({ roles, permissions, rolePermissions }: RolesClient
                         <div className="flex items-center gap-2">
                           <Checkbox
                             checked={allChecked}
+                            disabled={!canSavePermissions}
                             onCheckedChange={() => toggleModule(modulePermissions)}
                             className={someChecked && !allChecked ? "bg-primary/50" : ""}
                           />
@@ -173,6 +182,7 @@ export function RolesClient({ roles, permissions, rolePermissions }: RolesClient
                           >
                             <Checkbox
                               checked={selected.includes(p.id)}
+                              disabled={!canSavePermissions}
                               onCheckedChange={() => toggle(p.id)}
                             />
                             <span>{p.name.replace(".", " ")}</span>

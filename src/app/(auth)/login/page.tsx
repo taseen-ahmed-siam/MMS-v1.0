@@ -2,8 +2,9 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
-import { Landmark, Mail, Lock, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2 } from "lucide-react";
 import { loginAction, type AuthActionState } from "@/lib/auth/actions";
+import { MosqueIcon } from "@/components/public/islamic";
 
 const initialState: AuthActionState = { error: null };
 
@@ -18,7 +19,7 @@ export default function LoginPage() {
       <div className="hidden lg:flex lg:w-1/2 bg-primary islamic-pattern-dark relative items-center justify-center p-12">
         <div className="relative z-10 text-center text-primary-foreground">
           <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
-            <Landmark className="h-12 w-12 text-accent" />
+            <MosqueIcon size="h-12 w-12" className="text-accent" />
           </div>
           <h1 className="text-4xl font-bold mb-4">Al-Noor Mosque</h1>
           <p className="text-lg text-white/80 max-w-sm mx-auto">
@@ -35,7 +36,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-8">
           <div className="lg:hidden text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-              <Landmark className="h-8 w-8 text-primary" />
+              <MosqueIcon size="h-8 w-8" className="text-primary" />
             </div>
             <h1 className="text-2xl font-bold text-primary">Al-Noor Mosque</h1>
           </div>
@@ -78,20 +79,12 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label
-                  htmlFor="password"
-                  className="text-sm font-medium text-foreground"
-                >
-                  Password
-                </label>
-                <Link
-                  href="/forgot-password"
-                  className="text-xs font-medium text-primary hover:text-primary-dark transition-colors"
-                >
-                  Forgot password?
-                </Link>
-              </div>
+              <label
+                htmlFor="password"
+                className="text-sm font-medium text-foreground"
+              >
+                Password
+              </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
@@ -104,6 +97,12 @@ export default function LoginPage() {
                   className="h-11 w-full rounded-lg border border-input bg-white pl-10 pr-4 text-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
                 />
               </div>
+              <Link
+                href="/forgot-password"
+                className="inline-block text-xs font-medium text-primary hover:text-primary-dark transition-colors"
+              >
+                Forgot password?
+              </Link>
             </div>
 
             <button
@@ -121,16 +120,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          <p className="text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="/signup"
-              className="font-medium text-primary hover:text-primary-dark transition-colors"
-            >
-              Create one
-            </Link>
-          </p>
         </div>
       </div>
     </div>

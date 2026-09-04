@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Amiri } from "next/font/google";
+import { Geist, Geist_Mono, Amiri, Noto_Sans_Bengali } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -17,6 +17,11 @@ const amiri = Amiri({
   variable: "--font-amiri",
   weight: ["400", "700"],
   subsets: ["arabic", "latin"],
+});
+
+const notoSansBengali = Noto_Sans_Bengali({
+  variable: "--font-bengali",
+  subsets: ["bengali", "latin"],
 });
 
 export const metadata: Metadata = {
@@ -55,7 +60,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${amiri.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${amiri.variable} ${notoSansBengali.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {children}

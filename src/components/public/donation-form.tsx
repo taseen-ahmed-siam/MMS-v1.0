@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { HandCoins } from "lucide-react";
+import { HandCoins, Copy, Check } from "lucide-react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -30,12 +30,49 @@ export function DonationForm({ funds, settings }: DonationFormProps) {
   const {
     register,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(donationSchema) as never,
   });
 
   const didScroll = useRef(false);
+  const [copied, setCopied] = useState(false);
+
+  const paymentMethod = watch("payment_method") as string;
+
+  const methodInfo = (() => {
+    switch (paymentMethod) {
+      case "bkash":
+        return settings?.bkash_number
+          ? { title: "bKash Number", value: settings.bkash_number }
+          : null;
+      case "nagad":
+        return settings?.nagad_number
+          ? { title: "Nagad Number", value: settings.nagad_number }
+          : null;
+      case "rocket":
+        return settings?.rocket_number
+          ? { title: "Rocket Number", value: settings.rocket_number }
+          : null;
+      case "bank_transfer":
+        return settings?.bank_details
+          ? { title: "Bank Transfer Details", value: settings.bank_details }
+          : null;
+      default:
+        return null;
+    }
+  })();
+
+  const handleCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard unavailable
+    }
+  };
 
   useEffect(() => {
     if (state.success && !didScroll.current) {
@@ -171,6 +208,37 @@ export function DonationForm({ funds, settings }: DonationFormProps) {
         required
       />
       <input type="hidden" {...register("payment_method")} />
+
+      {methodInfo && (
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+            {methodInfo.title}
+          </p>
+          <button
+            type="button"
+            onClick={() => handleCopy(methodInfo.value)}
+            className="mt-1 flex items-start gap-2 text-left"
+            title="Click to copy"
+          >
+            <span
+              className={`text-base font-semibold text-foreground ${
+                methodInfo.title === "Bank Transfer Details" ? "text-sm whitespace-pre-line" : ""
+              }`}
+            >
+              {methodInfo.value}
+            </span>
+            {copied ? (
+              <Check className="h-4 w-4 shrink-0 text-success" />
+            ) : (
+              <Copy className="h-4 w-4 shrink-0 text-muted-foreground" />
+            )}
+          </button>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Send your donation using this {methodInfo.title.toLowerCase()}, then enter the
+            transaction ID below for verification.
+          </p>
+        </div>
+      )}
 
       <FormInput
         label="Transaction / Reference ID"
