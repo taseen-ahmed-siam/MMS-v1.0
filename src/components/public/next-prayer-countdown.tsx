@@ -53,7 +53,7 @@ export function NextPrayerCountdown({
 }: NextPrayerCountdownProps) {
   const now = useSyncExternalStore(
     subscribe,
-    () => Date.now(),
+    () => Math.floor(Date.now() / 1000),
     () => 0
   );
 
@@ -85,7 +85,7 @@ export function NextPrayerCountdown({
     return renderClock("--", "--", "--");
   }
 
-  const time = timePartsInTimeZone(new Date(now), timezone);
+  const time = timePartsInTimeZone(new Date(now * 1000), timezone);
   const currentMin = time.hours * 60 + time.minutes;
   const next = findNextPrayer(currentMin, prayers);
 
@@ -96,7 +96,7 @@ export function NextPrayerCountdown({
   const pad = (n: number) => String(n).padStart(2, "0");
 
   return (
-    <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+    <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-center sm:justify-center sm:text-center">
       <div>
         <p className="text-3xl font-bold text-[#C8A951]">{next.prayer.name}</p>
         <p className="text-sm text-emerald-100 mt-1">

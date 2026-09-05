@@ -22,9 +22,9 @@ export function Footer({ settings }: FooterProps) {
   return (
     <footer className="relative bg-[#043d2e] text-emerald-100 islamic-star-pattern-gold">
       <div className="absolute inset-0 bg-gradient-to-b from-[#043d2e]/95 to-[#043d2e]" />
-      <div className="relative mx-auto max-w-7xl px-4 pt-14 pb-8 sm:px-6 lg:px-8">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="space-y-4">
+      <div className="relative mx-auto max-w-7xl px-4 pt-8 pb-6 sm:px-6 lg:px-8">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 sm:gap-8">
+          <div className="space-y-3">
             <span className="text-lg font-bold text-gold-gradient">{mosqueName}</span>
             <p className="text-sm leading-relaxed text-emerald-200/80">
               {settings?.footer_text ??
@@ -32,7 +32,7 @@ export function Footer({ settings }: FooterProps) {
             </p>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             <h4 className="text-sm font-semibold uppercase tracking-wider text-[#C8A951]">
               Quick Links
             </h4>
@@ -50,7 +50,7 @@ export function Footer({ settings }: FooterProps) {
             </ul>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             <h4 className="text-sm font-semibold uppercase tracking-wider text-[#C8A951]">
               Contact Info
             </h4>
@@ -82,7 +82,7 @@ export function Footer({ settings }: FooterProps) {
             </ul>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3">
             <h4 className="text-sm font-semibold uppercase tracking-wider text-[#C8A951]">
               Prayer Times
             </h4>
@@ -99,7 +99,7 @@ export function Footer({ settings }: FooterProps) {
           </div>
         </div>
 
-        <div className="mt-12 border-t border-emerald-700/50 pt-6">
+        <div className="mt-8 border-t border-emerald-700/50 pt-4">
           <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
             <p className="text-xs text-emerald-300/60">
               &copy; {year} {mosqueName}. All rights reserved.

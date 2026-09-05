@@ -335,11 +335,11 @@ export default async function HomePage() {
       </section>
 
       {/* CONTACT */}
-      <section className="py-16 bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-18 bg-background">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           <SectionHeading title="Find Our Mosque" />
-          <div className="mt-8 grid md:grid-cols-2 gap-8 items-start">
-            <div className="space-y-4">
+          <div className="mt-8 space-y-8">
+            <div className="grid gap-6 sm:grid-cols-3">
               <div className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-primary mt-0.5" />
                 <div>

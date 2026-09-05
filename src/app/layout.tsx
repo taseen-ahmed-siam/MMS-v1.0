@@ -63,6 +63,32 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${amiri.variable} ${notoSansBengali.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <script
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: `(function(){
+  var isExtAttr=function(n){return n.indexOf("bis_")===0||n.indexOf("__processed_")===0;};
+  var strip=function(el){
+    var a=el.attributes,i=a.length;
+    while(i--){if(isExtAttr(a[i].name))el.removeAttribute(a[i].name);}
+  };
+  var sweep=function(){
+    var els=document.querySelectorAll("*"),i=els.length;
+    while(i--)strip(els[i]);
+    strip(document.documentElement);
+  };
+  if(document.readyState==="loading"){
+    document.addEventListener("DOMContentLoaded",sweep);
+  }else{sweep();}
+  new MutationObserver(function(ms){
+    for(var i=0;i<ms.length;i++){
+      var m=ms[i];
+      if(m.type==="attributes"&&isExtAttr(m.attributeName))strip(m.target);
+    }
+  }).observe(document.documentElement,{subtree:true,attributes:true});
+})();`,
+          }}
+        />
         {children}
         <Toaster
           position="top-right"
