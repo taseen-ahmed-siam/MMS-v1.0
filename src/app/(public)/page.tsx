@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Clock, Calendar, MapPin, Users, HandCoins, Landmark, Heart } from "lucide-react";
 import { getMosqueSettings, getTodayPrayerTimes, getLatestJummah, getPublishedAnnouncements, getUpcomingEvents, getLatestKhutbahs, getCurrentCommittee, getVisibleFunds } from "@/lib/queries/public";
@@ -7,7 +8,7 @@ import { SectionHeading } from "@/components/public/section-heading";
 import { PrayerCard } from "@/components/public/prayer-card";
 import { NextPrayerCountdown } from "@/components/public/next-prayer-countdown";
 import type { PrayerSlot } from "@/components/public/next-prayer-countdown";
-import { Bismillah, OrnamentalDivider } from "@/components/public/islamic";
+import { OrnamentalDivider } from "@/components/public/islamic";
 import { formatTime, getHijriDate, formatDate } from "@/lib/utils/format";
 import { CURRENCY_SYMBOL } from "@/constants";
 
@@ -50,7 +51,14 @@ export default async function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-primary/85 to-primary-dark/95" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 md:pt-28 md:pb-20">
           <div className="max-w-3xl mx-auto text-center">
-            <Bismillah className="mb-4 text-3xl sm:text-4xl" size="text-3xl sm:text-4xl" />
+            <Image
+              src="/images/bismillah.png"
+              alt="بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"
+              width={2172}
+              height={724}
+              priority
+              className="mx-auto mb-4 h-auto w-full max-w-[12rem] sm:max-w-[14rem] md:max-w-[16rem] select-none"
+            />
             <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-4">
               <span className="text-gold-gradient">{settings?.mosque_name || "Al-Noor Mosque"}</span>
             </h1>

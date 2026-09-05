@@ -41,7 +41,6 @@ export default async function PrayerTimesPage() {
   return (
     <div>
       <PageHeader
-        showBismillah
         title="Prayer Times"
         description="Never miss a prayer. View the daily and weekly schedule for all five prayers."
       />

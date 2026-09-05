@@ -16,7 +16,6 @@ export default async function DonatePage() {
   return (
     <div className="min-h-screen bg-background">
       <PageHeader
-        showBismillah
         title="Donate to Our Mosque"
         description="Your donation helps sustain prayer services, education, community programs, and ongoing projects."
       />

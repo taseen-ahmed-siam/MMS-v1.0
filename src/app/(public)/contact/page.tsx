@@ -15,7 +15,6 @@ export default async function ContactPage() {
   return (
     <div className="min-h-screen bg-background">
       <PageHeader
-        showBismillah
         title="Contact Us"
         description={"We'd love to hear from you. Send us your questions, suggestions, or requests."}
       />
