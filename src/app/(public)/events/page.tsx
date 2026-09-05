@@ -35,7 +35,7 @@ export default async function EventsPage() {
                 {events.map((event) => (
                   <Link
                     key={event.id}
-                    href={`/events/${event.slug}`}
+                    href={`/events/${event.slug || event.id}`}
                     className="group rounded-2xl border border-border bg-card overflow-hidden shadow-sm card-hover"
                   >
                     <div className="h-40 bg-gradient-to-br from-[#064E3B] to-[#043d2e] islamic-pattern-dark flex items-center justify-center">

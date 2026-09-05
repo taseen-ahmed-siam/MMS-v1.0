@@ -35,7 +35,7 @@ export default async function KhutbahPage() {
                 {khutbahs.map((k) => (
                   <Link
                     key={k.id}
-                    href={`/khutbah/${k.slug}`}
+                    href={`/khutbah/${k.slug || k.id}`}
                     className="group rounded-2xl border border-border bg-card p-6 shadow-sm card-hover"
                   >
                     <div className="mb-4 flex items-center gap-2 text-xs text-muted-foreground">

@@ -31,6 +31,25 @@ import type { Expense } from "@/types/database";
 
 type ActionResult = { error?: string; success?: boolean; id?: string };
 
+const emptyToNull = (v: string | undefined | null): string | null | undefined =>
+  v === "" ? null : v;
+
+async function ensureUniqueSlug(
+  table: "events" | "khutbahs",
+  baseSlug: string,
+  excludeId?: string
+): Promise<string> {
+  const base = baseSlug || "-";
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from(table)
+    .select("id", { count: "exact", head: true })
+    .eq("slug", base)
+    .neq("id", excludeId ?? "");
+  if (!count) return base;
+  return `${base}-${crypto.randomUUID().slice(0, 6)}`;
+}
+
 async function getCurrentUserId() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
@@ -723,7 +742,14 @@ export async function createEvent(
   const userId = await getCurrentUserId();
   const { data, error } = await supabase
     .from("events")
-    .insert({ ...parsed.data, slug: slugify(parsed.data.title), created_by: userId })
+    .insert({
+      ...parsed.data,
+      end_date: emptyToNull(parsed.data.end_date),
+      start_time: emptyToNull(parsed.data.start_time),
+      end_time: emptyToNull(parsed.data.end_time),
+      slug: await ensureUniqueSlug("events", slugify(parsed.data.title)),
+      created_by: userId,
+    })
     .select("id")
     .single();
   if (error) return { error: error.message };
@@ -750,7 +776,13 @@ export async function updateEvent(
   const supabase = await createClient();
   const { error } = await supabase
     .from("events")
-    .update({ ...parsed.data, slug: slugify(parsed.data.title) })
+    .update({
+      ...parsed.data,
+      end_date: emptyToNull(parsed.data.end_date),
+      start_time: emptyToNull(parsed.data.start_time),
+      end_time: emptyToNull(parsed.data.end_time),
+slug: await ensureUniqueSlug("events", slugify(parsed.data.title), id),
+    })
     .eq("id", id);
   if (error) return { error: error.message };
 
@@ -782,7 +814,12 @@ export async function createAnnouncement(
 
   const { data, error } = await (await createClient())
     .from("announcements")
-    .insert({ ...parsed.data, created_by: await getCurrentUserId() })
+    .insert({
+      ...parsed.data,
+      start_date: emptyToNull(parsed.data.start_date),
+      end_date: emptyToNull(parsed.data.end_date),
+      created_by: await getCurrentUserId(),
+    })
     .select("id")
     .single();
   if (error) return { error: error.message };
@@ -804,7 +841,11 @@ export async function updateAnnouncement(
 
   const { error } = await (await createClient())
     .from("announcements")
-    .update(parsed.data)
+    .update({
+      ...parsed.data,
+      start_date: emptyToNull(parsed.data.start_date),
+      end_date: emptyToNull(parsed.data.end_date),
+    })
     .eq("id", id);
   if (error) return { error: error.message };
 
@@ -836,7 +877,12 @@ export async function createKhutbah(
 
   const { data, error } = await (await createClient())
     .from("khutbahs")
-    .insert({ ...parsed.data, slug: slugify(parsed.data.title), created_by: await getCurrentUserId() })
+    .insert({
+      ...parsed.data,
+      date: emptyToNull(parsed.data.date),
+      slug: await ensureUniqueSlug("khutbahs", slugify(parsed.data.title)),
+      created_by: await getCurrentUserId(),
+    })
     .select("id")
     .single();
   if (error) return { error: error.message };
@@ -857,7 +903,11 @@ export async function updateKhutbah(
 
   const { error } = await (await createClient())
     .from("khutbahs")
-    .update({ ...parsed.data, slug: slugify(parsed.data.title) })
+    .update({
+      ...parsed.data,
+      date: emptyToNull(parsed.data.date),
+      slug: await ensureUniqueSlug("khutbahs", slugify(parsed.data.title), id),
+    })
     .eq("id", id);
   if (error) return { error: error.message };
 

@@ -143,7 +143,14 @@ export async function getEventBySlug(slug: string): Promise<Event | null> {
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
-  return data as Event | null;
+  if (data) return data as Event;
+  const { data: byId } = await supabase
+    .from("events")
+    .select("*")
+    .eq("id", slug)
+    .eq("status", "published")
+    .maybeSingle();
+  return (byId as Event) ?? null;
 }
 
 export async function getLatestKhutbahs(limit = 5): Promise<Khutbah[]> {
@@ -165,7 +172,14 @@ export async function getKhutbahBySlug(slug: string): Promise<Khutbah | null> {
     .eq("slug", slug)
     .eq("status", "published")
     .maybeSingle();
-  return data as Khutbah | null;
+  if (data) return data as Khutbah;
+  const { data: byId } = await supabase
+    .from("khutbahs")
+    .select("*")
+    .eq("id", slug)
+    .eq("status", "published")
+    .maybeSingle();
+  return (byId as Khutbah) ?? null;
 }
 
 export async function getCurrentCommittee(): Promise<CommitteeMember[]> {

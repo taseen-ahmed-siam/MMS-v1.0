@@ -193,7 +193,7 @@ export default async function HomePage() {
             </div>
             <div className="grid md:grid-cols-3 gap-6">
               {events.map((e) => (
-                <Link key={e.id} href={`/events/${e.slug}`} className="bg-card rounded-2xl overflow-hidden shadow-sm border hover:shadow-lg transition-shadow group">
+                <Link key={e.id} href={`/events/${e.slug || e.id}`} className="bg-card rounded-2xl overflow-hidden shadow-sm border hover:shadow-lg transition-shadow group">
                   <div className="h-40 bg-primary/80 islamic-pattern-dark flex items-center justify-center">
                     <Calendar className="h-12 w-12 text-accent" />
                   </div>
@@ -273,7 +273,7 @@ export default async function HomePage() {
             </div>
             <div className="grid md:grid-cols-3 gap-6">
               {khutbahs.map((k) => (
-                <Link key={k.id} href={`/khutbah/${k.slug}`} className="bg-card rounded-2xl p-6 shadow-sm border hover:shadow-md transition-shadow">
+                <Link key={k.id} href={`/khutbah/${k.slug || k.id}`} className="bg-card rounded-2xl p-6 shadow-sm border hover:shadow-md transition-shadow">
                   <p className="text-xs text-accent font-medium mb-2">{formatDate(k.date)}</p>
                   <h3 className="font-semibold text-lg mb-2">{k.title}</h3>
                   <p className="text-sm text-muted-foreground mb-3">By {k.speaker}</p>
