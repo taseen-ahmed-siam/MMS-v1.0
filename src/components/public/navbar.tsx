@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils/format";
@@ -52,7 +53,16 @@ export function Navbar({ settings }: NavbarProps) {
       >
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="flex items-center">
-            <span className="text-lg font-bold text-gold-gradient">{mosqueName}</span>
+            <Image
+              src="/logo.png"
+              alt={mosqueName}
+              width={180}
+              height={56}
+              priority
+              className="h-12 w-auto sm:h-14 md:h-16"
+              sizes="(max-width: 640px) 140px, (max-width: 768px) 160px, 180px"
+            />
+            <span className="sr-only">{mosqueName}</span>
           </Link>
 
           <div className="hidden items-center gap-1 lg:flex">
@@ -117,7 +127,16 @@ export function Navbar({ settings }: NavbarProps) {
         )}
       >
         <div className="flex h-16 items-center justify-between border-b border-[#C8A951]/40 px-4">
-          <span className="text-lg font-bold text-gold-gradient">Menu</span>
+          <Image
+            src="/logo.png"
+            alt={mosqueName}
+            width={140}
+            height={40}
+            priority
+            className="h-11 w-auto"
+            sizes="140px"
+          />
+          <span className="sr-only">{mosqueName}</span>
           <button
             onClick={() => setMobileOpen(false)}
             className="rounded-lg p-2 text-white hover:bg-white/10"
