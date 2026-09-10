@@ -1,0 +1,16 @@
+
+> mosque-app@0.1.0 dev
+> next dev
+
+▲ Next.js 16.3.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.209:3000
+- Environments: .env.local
+✓ Ready in 1348ms
+✓ Running next.config.ts took 96ms
+
+ GET /admin 200 in 5.7s (next.js: 760ms, proxy.ts: 1694ms, application-code: 3.3s)
+ GET /manifest.webmanifest 200 in 385ms (next.js: 274ms, proxy.ts: 21ms, application-code: 90ms)
+[browser] Encountered two children with the same key, `Siam Ahmed10000`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version. 
+[browser] Encountered two children with the same key, `Siam Ahmed10000`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version. 
+[?25h

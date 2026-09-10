@@ -20,7 +20,7 @@ import {
   ArrowUpFromLine,
   Wallet,
   Users,
-  Landmark,
+  Coins,
   CalendarDays,
   Inbox,
   Megaphone,
@@ -35,7 +35,7 @@ const STAT_ICONS: Record<string, LucideIcon> = {
   expenses: ArrowUpFromLine,
   balance: Wallet,
   members: Users,
-  funds: Landmark,
+  funds: Coins,
   events: CalendarDays,
   requests: Inbox,
 };
@@ -57,23 +57,29 @@ export function StatsCard({
 }) {
   const Icon = STAT_ICONS[icon] ?? HandCoins;
   const inner = (
-    <div className="flex items-start justify-between">
-      <div>
+    <>
+      <div className="flex items-start justify-between gap-3">
         <p className="text-sm text-muted-foreground">{title}</p>
-        <p className="text-2xl font-bold mt-1">{value}</p>
+        <div
+          className={`h-11 w-11 shrink-0 rounded-xl ${bg} flex items-center justify-center`}
+        >
+          <Icon className={`h-5 w-5 ${color}`} />
+        </div>
       </div>
-      <div className={`h-11 w-11 rounded-xl ${bg} flex items-center justify-center`}>
-        <Icon className={`h-5 w-5 ${color}`} />
-      </div>
-    </div>
+      <p className="text-2xl font-bold mt-auto pt-3">{value}</p>
+    </>
   );
   if (!href) {
-    return <div className="bg-card rounded-2xl border shadow-sm p-5">{inner}</div>;
+    return (
+      <div className="flex h-full flex-col bg-card rounded-2xl border shadow-sm p-5">
+        {inner}
+      </div>
+    );
   }
   return (
     <Link
       href={href}
-      className="bg-card rounded-2xl border shadow-sm p-5 hover:shadow-md transition-shadow"
+      className="flex h-full flex-col bg-card rounded-2xl border shadow-sm p-5 hover:shadow-md transition-shadow"
     >
       {inner}
     </Link>

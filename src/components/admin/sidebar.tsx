@@ -10,7 +10,7 @@ import {
   CalendarDays,
   BookOpen,
   HandCoins,
-  PiggyBank,
+  Banknote,
   ArrowDownToLine,
   ArrowUpFromLine,
   BarChart3,
@@ -66,7 +66,7 @@ const navGroups: NavGroup[] = [
     label: "Finance",
     items: [
       { label: "Donations", href: "/admin/donations", icon: HandCoins },
-      { label: "Funds", href: "/admin/funds", icon: PiggyBank },
+      { label: "Funds", href: "/admin/funds", icon: Banknote },
       { label: "Income", href: "/admin/income", icon: ArrowDownToLine },
       { label: "Expenses", href: "/admin/expenses", icon: ArrowUpFromLine },
       { label: "Reports", href: "/admin/reports", icon: BarChart3 },
