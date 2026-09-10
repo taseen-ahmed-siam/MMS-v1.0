@@ -24,7 +24,7 @@ export function AdminShell({ user, children }: AdminShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#FAF8F2]">
+    <div className="relative flex h-screen overflow-hidden bg-[#FAF8F2]">
       <div className="hidden lg:flex lg:flex-col">
         <AdminSidebar collapsed={collapsed} onNavigate={() => {}} role={user.role} />
       </div>

@@ -84,13 +84,16 @@ function SettingsClient({ settings }: { settings: MosqueSetting | null }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex min-h-full flex-col space-y-6">
       <PageHeader
         title="Mosque Settings"
         description="Configure the mosque&apos;s identity, prayer, and donation information."
       />
 
-      <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl space-y-6">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex max-w-4xl flex-1 flex-col space-y-6"
+      >
         <div className="space-y-5 rounded-2xl border bg-card p-6 shadow-sm">
           <h2 className="font-semibold">Mosque Identity</h2>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -180,7 +183,7 @@ function SettingsClient({ settings }: { settings: MosqueSetting | null }) {
           />
         </div>
 
-        <div className="space-y-5 rounded-2xl border bg-card p-6 shadow-sm">
+        <div className="flex flex-1 flex-col space-y-5 rounded-2xl border bg-card p-6 shadow-sm">
           <h2 className="font-semibold">Donation Information</h2>
           <FormTextarea
             label="Donation Instructions"
@@ -201,7 +204,7 @@ function SettingsClient({ settings }: { settings: MosqueSetting | null }) {
           </div>
         </div>
 
-        <div className="flex justify-end gap-3">
+        <div className="mt-auto flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={() => router.refresh()}>
             Reset
           </Button>

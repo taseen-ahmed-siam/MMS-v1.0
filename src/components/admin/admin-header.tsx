@@ -25,7 +25,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getInitials } from "@/lib/utils/format";
 import { logoutAction } from "@/lib/auth/actions";
-import { CrescentStar } from "@/components/public/islamic";
 import { roleHasPermission } from "@/lib/permissions";
 
 interface AdminHeaderProps {
@@ -67,6 +66,7 @@ const pathLabels: Record<string, string> = {
 };
 
 function Breadcrumbs({ pathname }: { pathname: string }) {
+  if (pathname === "/admin") return null;
   const segments = pathname.split("/").filter(Boolean);
   const crumbs = segments.map((segment, index) => ({
     label: pathLabels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1),
@@ -125,7 +125,6 @@ export function AdminHeader({
       <Separator orientation="vertical" className="h-6" />
 
       <div className="flex flex-1 items-center gap-2 overflow-hidden">
-        <CrescentStar className="hidden sm:block h-4 w-4 text-[#C8A951]" />
         <Breadcrumbs pathname={pathname} />
       </div>
 
