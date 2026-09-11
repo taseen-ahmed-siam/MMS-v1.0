@@ -31,6 +31,12 @@ import {
 } from "lucide-react";
 import { navItemAllowed } from "@/lib/permissions";
 
+const ROLE_LABELS: Record<string, string> = {
+  admin: "MMS Admin",
+  treasurer: "MMS Treasurer",
+  member: "MMS Member",
+};
+
 interface SidebarProps {
   collapsed: boolean;
   onNavigate: () => void;
@@ -51,7 +57,10 @@ interface NavGroup {
 const navGroups: NavGroup[] = [
   {
     label: "Dashboard",
-    items: [{ label: "Dashboard", href: "/admin", icon: LayoutDashboard }],
+    items: [
+      { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+      { label: "My Donations", href: "/admin/my-donations", icon: HandCoins },
+    ],
   },
   {
     label: "Mosque",
@@ -139,6 +148,7 @@ function SidebarLink({
 
 export function AdminSidebar({ collapsed, onNavigate, role }: SidebarProps) {
   const pathname = usePathname();
+  const displayRole = role ? (ROLE_LABELS[role.toLowerCase()] ?? `MMS ${role.charAt(0).toUpperCase()}${role.slice(1)}`) : "MMS";
 
   function isActive(href: string) {
     if (href === "/admin") return pathname === "/admin";
@@ -165,7 +175,7 @@ export function AdminSidebar({ collapsed, onNavigate, role }: SidebarProps) {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#C8A951] text-sm font-bold text-[#064E3B]">
               M
             </div>
-            <span className="text-lg font-semibold">MMS Admin</span>
+            <span className="text-lg font-semibold">{displayRole}</span>
           </div>
         )}
         {collapsed && (

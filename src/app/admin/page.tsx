@@ -17,8 +17,7 @@ import {
   RecentActivityTable,
   QuickActions,
 } from "@/components/admin/dashboard";
-import { formatCurrency } from "@/lib/utils/format";
-import { timeAgo } from "@/lib/utils/format";
+import { formatCurrency, timeAgo } from "@/lib/utils/format";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin, roleHasPermission } from "@/lib/permissions";
 

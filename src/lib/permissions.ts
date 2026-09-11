@@ -38,7 +38,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
   muazzin: [],
   committee_member: [],
   staff: [],
-  member: [],
+  member: ["dashboard.view", "donation.view.own"],
 };
 
 const SUPER_ADMIN = "super_admin";
@@ -66,6 +66,7 @@ export type NavVisibility =
 
 export const NAV_PERMISSIONS: Record<string, NavVisibility> = {
   "/admin": { kind: "permission", permission: "dashboard.view" },
+  "/admin/my-donations": { kind: "permission", permission: "donation.view.own" },
   "/admin/prayer-times": { kind: "permission", permission: "prayer.view" },
   "/admin/announcements": { kind: "permission", permission: "announcement.manage" },
   "/admin/events": { kind: "permission", permission: "event.manage" },

@@ -845,3 +845,34 @@ export async function getIncomeByCategory() {
   });
   return Array.from(totals.entries()).map(([name, value]) => ({ name, value }));
 }
+
+export async function getMyDonations({
+  userId,
+  page = 1,
+  pageSize = 20,
+}: {
+  userId: string;
+  page?: number;
+  pageSize?: number;
+} = {
+  userId: "",
+}) {
+  const supabase = await createClient();
+
+  const fromIndex = (page - 1) * pageSize;
+  const { data, count } = await supabase
+    .from("donations")
+    .select("*, donation_funds(name)", { count: "exact" })
+    .eq("user_id", userId)
+    .is("deleted_at", null)
+    .order("donation_date", { ascending: false })
+    .range(fromIndex, fromIndex + pageSize - 1);
+
+  return {
+    data: (data as (Donation & { donation_funds: { name: string } | null })[]) ?? [],
+    total: count ?? 0,
+    page,
+    pageSize,
+    totalPages: Math.ceil((count ?? 0) / pageSize),
+  };
+}

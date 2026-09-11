@@ -35,6 +35,10 @@ export async function submitPublicDonation(
 
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const receiptNumber = `RCP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
   const { error } = await supabase.from("donations").insert({
@@ -50,6 +54,7 @@ export async function submitPublicDonation(
     notes: "Submitted via public donation page",
     status: "pending",
     receipt_number: receiptNumber,
+    user_id: user?.id ?? null,
   });
 
   if (error) {

@@ -250,6 +250,7 @@ export interface Donation {
   created_at: string;
   updated_at: string;
   created_by: string | null;
+  user_id: string | null;
   deleted_at: string | null;
 }
 

@@ -10,6 +10,7 @@ import type { MosqueSetting } from "@/types/database";
 
 interface NavbarProps {
   settings: MosqueSetting | null;
+  isLoggedIn: boolean;
 }
 
 const navLinks = [
@@ -24,7 +25,7 @@ const navLinks = [
 
 const desktopHiddenLinks = new Set(["/about", "/prayer-times", "/contact"]);
 
-export function Navbar({ settings }: NavbarProps) {
+export function Navbar({ settings, isLoggedIn }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
@@ -91,12 +92,21 @@ export function Navbar({ settings }: NavbarProps) {
             >
               Donate
             </Link>
-            <Link
-              href="/login"
-              className="ml-1 rounded-lg border border-emerald-400/40 px-4 py-2 text-sm font-medium text-white transition-colors hover:border-white/60 hover:bg-white/10"
-            >
-              Login
-            </Link>
+            {isLoggedIn ? (
+              <Link
+                href="/admin"
+                className="ml-1 rounded-lg border border-emerald-400/40 px-4 py-2 text-sm font-medium text-white transition-colors hover:border-white/60 hover:bg-white/10"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="ml-1 rounded-lg border border-emerald-400/40 px-4 py-2 text-sm font-medium text-white transition-colors hover:border-white/60 hover:bg-white/10"
+              >
+                Login
+              </Link>
+            )}
           </div>
 
           <button
@@ -157,12 +167,21 @@ export function Navbar({ settings }: NavbarProps) {
           >
             Donate
           </Link>
-          <Link
-            href="/login"
-            className="mt-1 rounded-lg border border-emerald-400/40 px-3 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-white/10"
-          >
-            Login
-          </Link>
+          {isLoggedIn ? (
+            <Link
+              href="/admin"
+              className="mt-1 rounded-lg border border-emerald-400/40 px-3 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-white/10"
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="mt-1 rounded-lg border border-emerald-400/40 px-3 py-2.5 text-center text-sm font-medium text-white transition-colors hover:bg-white/10"
+            >
+              Login
+            </Link>
+          )}
         </div>
       </div>
     </>
