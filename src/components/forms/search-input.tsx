@@ -1,7 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { Search, Command } from "lucide-react"
+import { Command } from "lucide-react"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faMagnifyingGlass } from "@fortawesome/free-solid-svg-icons"
 
 import { cn } from "@/lib/utils/format"
 import { Input } from "@/components/ui/input"
@@ -21,7 +23,7 @@ function SearchInput({
 }: SearchInputProps) {
   return (
     <div className={cn("relative", className)}>
-      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <FontAwesomeIcon icon={faMagnifyingGlass} className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}

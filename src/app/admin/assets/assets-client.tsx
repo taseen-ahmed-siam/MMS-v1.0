@@ -208,7 +208,7 @@ export function AssetsClient({
         emptyTitle="No assets"
         emptyDescription="No assets match your current filters."
       >
-        <div className="px-4 pt-4">
+        <div className="px-4 pb-4 pt-4">
           <FilterBar
             search={searchInput}
             onSearchChange={setSearchInput}
@@ -283,6 +283,7 @@ function AssetFormDialog({
   const {
     register,
     handleSubmit,
+    setValue,
     reset,
     formState: { errors },
   } = useForm<z.input<typeof assetSchema>>({
@@ -366,8 +367,12 @@ function AssetFormDialog({
           label="Category"
           name="category"
           value={categoryValue}
-          onValueChange={setCategoryValue}
+          onValueChange={(value) => {
+            setCategoryValue(value);
+            setValue("category", value, { shouldValidate: true });
+          }}
           options={ASSET_CATEGORIES.map((c) => ({ value: c, label: c }))}
+          error={errors.category?.message}
           required
         />
         <div className="grid grid-cols-2 gap-4">

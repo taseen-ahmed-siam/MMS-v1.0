@@ -5,13 +5,12 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Save } from "lucide-react";
 import { saveRolePermissions } from "@/lib/actions/admin";
-import { DataTable, type Column } from "@/components/admin/data-table";
-import { FormDialog } from "@/components/admin/form-dialog";
 import { AdminTableWrapper } from "@/components/admin/table-wrapper";
 import { PageHeader } from "@/components/forms/page-header";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils/format";
 
 interface Role {
   id: string;
@@ -98,37 +97,42 @@ export function RolesClient({ roles, permissions, rolePermissions, currentRole }
     });
   };
 
-  const columns: Column<Role>[] = [
-    { key: "name", header: "Role", cell: (row) => (
-      <div>
-        <p className="font-medium">{row.name}</p>
-        {row.description && (
-          <p className="text-xs text-muted-foreground">{row.description}</p>
-        )}
-      </div>
-    ), className: "w-16" },
-    { key: "permissions", header: "Permissions", cell: (row) => {
-      const count = rolePermissions[row.id]?.length ?? 0;
-      return (
-        <span className="text-sm text-muted-foreground">
-          {count} permission{count === 1 ? "" : "s"}
-        </span>
-      );
-    }},
-  ];
-
   return (
     <div className="space-y-6">
       <PageHeader title="Roles & Permissions" description="Manage role-based access control" />
 
-      <div className="grid lg:grid-cols-5 gap-6">
+      <div className="grid gap-6 lg:grid-cols-5">
         <div className="lg:col-span-2">
-          <AdminTableWrapper empty={roles.length === 0} emptyTitle="No roles">
-            <DataTable
-              columns={columns}
-              data={roles}
-              onRowClick={(row) => setSelectedRole(row)}
-            />
+          <AdminTableWrapper title="Roles" empty={roles.length === 0} emptyTitle="No roles">
+            <div className="divide-y divide-black/[0.05]">
+              {roles.map((role) => {
+                const active = selectedRole?.id === role.id;
+                const count = rolePermissions[role.id]?.length ?? 0;
+                return (
+                  <button
+                    key={role.id}
+                    type="button"
+                    onClick={() => setSelectedRole(role)}
+                    className={cn(
+                      "flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors sm:px-5",
+                      active ? "bg-[#064E3B]/[0.06]" : "hover:bg-black/[0.02]"
+                    )}
+                  >
+                    <div className="min-w-0">
+                      <p className={cn("font-medium", active ? "text-[#064E3B]" : "text-foreground")}>
+                        {role.name}
+                      </p>
+                      {role.description && (
+                        <p className="truncate text-xs text-muted-foreground">{role.description}</p>
+                      )}
+                    </div>
+                    <span className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">
+                      {count} perm{count === 1 ? "" : "s"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </AdminTableWrapper>
         </div>
 
@@ -149,9 +153,9 @@ export function RolesClient({ roles, permissions, rolePermissions, currentRole }
             }
           >
             {selectedRole && (
-              <div className="divide-y p-4">
+              <div className="divide-y px-4 py-1 sm:px-6">
                 {!canSavePermissions && (
-                  <div className="rounded-lg bg-amber-50 text-amber-800 text-xs p-3 border border-amber-200 mb-3">
+                  <div className="rounded-lg bg-amber-50 text-amber-800 text-xs p-3 border border-amber-200 mb-1 mt-3">
                     Read-only — only the Super Admin can change permissions.
                   </div>
                 )}
@@ -160,25 +164,25 @@ export function RolesClient({ roles, permissions, rolePermissions, currentRole }
                   const someChecked = modulePermissions.some((p) => selected.includes(p.id));
                   return (
                     <div key={module} className="py-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2">
                           <Checkbox
                             checked={allChecked}
                             disabled={!canSavePermissions}
                             onCheckedChange={() => toggleModule(modulePermissions)}
                             className={someChecked && !allChecked ? "bg-primary/50" : ""}
                           />
-                          <Label className="font-medium capitalize">{module}</Label>
+                          <Label className="truncate font-medium capitalize">{module}</Label>
                         </div>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="shrink-0 text-xs text-muted-foreground">
                           {modulePermissions.filter((p) => selected.includes(p.id)).length}/{modulePermissions.length}
                         </span>
                       </div>
-                      <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 pl-7">
+                      <div className="mt-2 grid grid-cols-1 gap-2 pl-7 sm:grid-cols-2">
                         {modulePermissions.map((p) => (
                           <label
                             key={p.id}
-                            className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer"
+                            className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground"
                           >
                             <Checkbox
                               checked={selected.includes(p.id)}

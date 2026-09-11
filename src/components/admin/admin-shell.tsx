@@ -30,7 +30,11 @@ export function AdminShell({ user, children }: AdminShellProps) {
       </div>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="w-64 p-0" style={{ backgroundColor: "#064E3B" }}>
+        <SheetContent
+          side="left"
+          className="w-64 p-0 [&>button]:right-3 [&>button]:top-3 [&>button]:flex [&>button]:h-9 [&>button]:w-9 [&>button]:items-center [&>button]:justify-center [&>button]:text-white [&>button]:opacity-100 [&>button]:hover:bg-white/10 [&>button]:hover:text-white [&>button]:focus:ring-white/60"
+          style={{ backgroundColor: "#064E3B" }}
+        >
           <SheetTitle className="sr-only">Navigation</SheetTitle>
           <AdminSidebar collapsed={false} onNavigate={() => setMobileOpen(false)} role={user.role} />
         </SheetContent>

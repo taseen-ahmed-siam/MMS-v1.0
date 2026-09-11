@@ -33,13 +33,13 @@ function DataTable<T>({
   className,
 }: DataTableProps<T>) {
   return (
-    <Table className={className}>
+    <Table className={cn("min-w-[64rem] lg:min-w-0", className)}>
       <TableHeader>
-        <TableRow className="hover:bg-transparent">
+        <TableRow className="bg-[#064E3B] hover:bg-[#064E3B]">
           {columns.map((col) => (
             <TableHead
               key={col.key}
-              className={cn("text-xs font-medium uppercase tracking-wider", col.className)}
+              className={cn("text-xs font-semibold uppercase tracking-wider text-white", col.className)}
             >
               {col.header}
             </TableHead>

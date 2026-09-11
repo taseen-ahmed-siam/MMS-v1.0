@@ -7,6 +7,12 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faMosque,
+  faGlobeAsia,
+  faHandHoldingHeart,
+} from "@fortawesome/free-solid-svg-icons";
 import { updateSettings } from "@/lib/actions/admin";
 import { mosqueSettingsSchema } from "@/lib/validations";
 import {
@@ -94,8 +100,11 @@ function SettingsClient({ settings }: { settings: MosqueSetting | null }) {
         onSubmit={handleSubmit(onSubmit)}
         className="flex max-w-4xl flex-1 flex-col space-y-6"
       >
-        <div className="space-y-5 rounded-2xl border bg-card p-6 shadow-sm">
-          <h2 className="font-semibold">Mosque Identity</h2>
+        <div className="space-y-5 rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
+          <h2 className="flex items-center gap-2 font-semibold">
+            <FontAwesomeIcon icon={faMosque} className="text-[#064E3B]" />
+            Mosque Identity
+          </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <FormInput
               label="Mosque Name"
@@ -131,8 +140,11 @@ function SettingsClient({ settings }: { settings: MosqueSetting | null }) {
           </div>
         </div>
 
-        <div className="space-y-5 rounded-2xl border bg-card p-6 shadow-sm">
-          <h2 className="font-semibold">Regional & Prayer Settings</h2>
+        <div className="space-y-5 rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
+          <h2 className="flex items-center gap-2 font-semibold">
+            <FontAwesomeIcon icon={faGlobeAsia} className="text-[#064E3B]" />
+            Regional & Prayer Settings
+          </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <FormInput label="Currency (ISO code)" name="currency" register={register("currency")} />
             <FormInput label="Timezone" name="timezone" register={register("timezone")} />
@@ -183,8 +195,11 @@ function SettingsClient({ settings }: { settings: MosqueSetting | null }) {
           />
         </div>
 
-        <div className="flex flex-1 flex-col space-y-5 rounded-2xl border bg-card p-6 shadow-sm">
-          <h2 className="font-semibold">Donation Information</h2>
+        <div className="flex flex-1 flex-col space-y-5 rounded-2xl border border-black/5 bg-white p-6 shadow-sm">
+          <h2 className="flex items-center gap-2 font-semibold">
+            <FontAwesomeIcon icon={faHandHoldingHeart} className="text-[#064E3B]" />
+            Donation Information
+          </h2>
           <FormTextarea
             label="Donation Instructions"
             name="donation_instructions"

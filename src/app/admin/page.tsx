@@ -17,13 +17,50 @@ import {
   RecentActivityTable,
   QuickActions,
 } from "@/components/admin/dashboard";
-import { formatCurrency, timeAgo } from "@/lib/utils/format";
+import { formatCurrency, timeAgo, cn } from "@/lib/utils/format";
 import { createClient } from "@/lib/supabase/server";
 import { isAdmin, roleHasPermission } from "@/lib/permissions";
 
 export const metadata: Metadata = {
   title: "Dashboard",
 };
+
+function SectionCard({
+  title,
+  href,
+  children,
+  className,
+}: {
+  title: string;
+  href?: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={cn(
+        "rounded-2xl border border-black/5 bg-white p-5 shadow-sm sm:p-6",
+        className
+      )}
+    >
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-foreground">
+          <span className="h-2 w-2 rounded-full bg-[#C8A951]" />
+          {title}
+        </h2>
+        {href && (
+          <Link
+            href={href}
+            className="text-xs font-semibold text-primary transition-colors hover:text-[#065F46]"
+          >
+            View all
+          </Link>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
 
 export default async function AdminDashboard() {
   const [stats, chartData, fundData, recentDonations, recentExpenses, newMembers, activity] =
@@ -79,110 +116,91 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of mosque&apos;s activities.</p>
-      </div>
-
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((card) => (
-          <StatsCard key={card.title} {...card} />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {statCards.map((s) => (
+          <StatsCard key={s.title} {...s} />
         ))}
       </div>
 
       {/* Charts */}
       {canViewDonations && canViewExpenses && (
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-card rounded-2xl border shadow-sm p-6">
-            <h2 className="font-semibold mb-4">Donation vs Expense (12 Months)</h2>
+        <div className="grid gap-6 lg:grid-cols-3">
+          <SectionCard title="Donation vs Expense (12 Months)" className="lg:col-span-2">
             <MonthlyChart data={chartData} />
-          </div>
-          <div className="bg-card rounded-2xl border shadow-sm p-6">
-            <h2 className="font-semibold mb-4">Donations by Fund</h2>
+          </SectionCard>
+          <SectionCard title="Donations by Fund">
             <DonationFundChart data={fundData} />
-          </div>
+          </SectionCard>
         </div>
       )}
 
       {/* Recent */}
       {(canViewDonations || canViewExpenses) && (
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid gap-6 lg:grid-cols-2">
           {canViewDonations && (
-            <div className="bg-card rounded-2xl border shadow-sm p-6 overflow-hidden">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold">Recent Donations</h2>
-                <Link href="/admin/donations" className="text-primary text-sm font-medium hover:underline">
-                  View all
-                </Link>
-              </div>
+            <SectionCard title="Recent Donations" href="/admin/donations">
               <RecentDonationsTable donations={recentDonations} />
-            </div>
+            </SectionCard>
           )}
           {canViewExpenses && (
-            <div className="bg-card rounded-2xl border shadow-sm p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold">Recent Expenses</h2>
-                <Link href="/admin/expenses" className="text-primary text-sm font-medium hover:underline">
-                  View all
-                </Link>
-              </div>
-              <ul className="divide-y">
+            <SectionCard title="Recent Expenses" href="/admin/expenses">
+              <ul className="divide-y divide-black/[0.05]">
                 {recentExpenses.length === 0 && (
-                  <li className="text-muted-foreground text-sm py-4 text-center">No expenses recorded yet.</li>
+                  <li className="py-8 text-center text-sm text-muted-foreground">
+                    No expenses recorded yet.
+                  </li>
                 )}
                 {recentExpenses.map((e) => (
-                  <li key={e.id} className="py-3 flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-sm">{e.expense_category}</p>
-                      <p className="text-xs text-muted-foreground">{e.vendor || "—"} · {e.date}</p>
+                  <li key={e.id} className="flex items-center justify-between gap-3 py-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-foreground">
+                        {e.expense_category}
+                      </p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {e.vendor || "—"} · {e.date}
+                      </p>
                     </div>
-                    <span className="font-semibold text-red-600">{formatCurrency(e.amount)}</span>
+                    <span className="shrink-0 font-bold text-rose-600">
+                      {formatCurrency(e.amount)}
+                    </span>
                   </li>
                 ))}
               </ul>
-            </div>
+            </SectionCard>
           )}
         </div>
       )}
 
       {/* New members + activity + quick actions */}
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid gap-6 lg:grid-cols-3">
         {canViewMembers && (
-          <div className="bg-card rounded-2xl border shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold">New Members</h2>
-              <Link href="/admin/members" className="text-primary text-sm font-medium hover:underline">
-                View all
-              </Link>
-            </div>
-            <ul className="divide-y">
+          <SectionCard title="New Members" href="/admin/members">
+            <ul className="divide-y divide-black/[0.05]">
               {newMembers.length === 0 && (
-                <li className="text-muted-foreground text-sm py-4 text-center">No members yet.</li>
+                <li className="py-8 text-center text-sm text-muted-foreground">No members yet.</li>
               )}
               {newMembers.map((m) => (
-                <li key={m.id} className="py-3 flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-sm">{m.full_name}</p>
-                    <p className="text-xs text-muted-foreground">{m.member_id}</p>
+                <li key={m.id} className="flex items-center justify-between gap-3 py-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-foreground">{m.full_name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{m.member_id}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground">{timeAgo(m.created_at)}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">{timeAgo(m.created_at)}</span>
                 </li>
               ))}
             </ul>
-          </div>
+          </SectionCard>
         )}
         {canViewAudit && (
-          <div className="bg-card rounded-2xl border shadow-sm p-6">
-            <h2 className="font-semibold mb-4">Recent Activity</h2>
+          <SectionCard title="Recent Activity">
             <RecentActivityTable activity={activity} />
-          </div>
+          </SectionCard>
         )}
         {isAdmin(currentRole) && (
-          <div className="bg-card rounded-2xl border shadow-sm p-6">
-            <h2 className="font-semibold mb-4">Quick Actions</h2>
+          <SectionCard title="Quick Actions">
             <QuickActions />
-          </div>
+          </SectionCard>
         )}
       </div>
     </div>

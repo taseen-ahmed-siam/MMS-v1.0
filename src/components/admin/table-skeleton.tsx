@@ -17,7 +17,7 @@ function TableSkeleton({ rows = 5, columns = 4, className }: TableSkeletonProps)
     <Card className={cn("rounded-2xl border shadow-sm", className)}>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[64rem] text-sm lg:min-w-0">
             <thead>
               <tr className="border-b">
                 {Array.from({ length: columns }).map((_, colIndex) => (

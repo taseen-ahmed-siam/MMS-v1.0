@@ -29,7 +29,7 @@ import { slugify } from "@/lib/utils/format";
 import { roleHasPermission } from "@/lib/permissions";
 import type { Expense } from "@/types/database";
 
-type ActionResult = { error?: string; success?: boolean; id?: string };
+type ActionResult = { error?: string; success?: boolean; id?: string; warning?: string };
 
 const emptyToNull = (v: string | undefined | null): string | null | undefined =>
   v === "" ? null : v;
@@ -555,10 +555,16 @@ export async function createMember(
 
   const supabase = await createClient();
   const userId = await getCurrentUserId();
+  const linkUserId = (formData.get("user_id") as string)?.trim() || null;
   const memberId = `MEM-${Date.now().toString().slice(-6)}`;
   const { data, error } = await supabase
     .from("members")
-    .insert({ ...parsed.data, member_id: memberId, created_by: userId })
+    .insert({
+      ...parsed.data,
+      member_id: memberId,
+      created_by: userId,
+      ...(linkUserId ? { user_id: linkUserId } : {}),
+    })
     .select("id")
     .single();
   if (error) return { error: error.message };
@@ -1343,7 +1349,7 @@ export async function createZakatDistribution(
 // USERS & ROLES
 // ============================================================
 
-export async function createUserAccount(formData: FormData) {
+export async function createUserAccount(formData: FormData): Promise<ActionResult> {
   const actorRole = await getCurrentUserRole();
   if (actorRole !== "super_admin") {
     return { error: "Only the Super Admin can create accounts" };
@@ -1389,16 +1395,59 @@ export async function createUserAccount(formData: FormData) {
     }
   }
 
+  const memberOptIn =
+    (formData.get("create_member") as string) === "on" ||
+    (formData.get("create_member") as string) === "1";
+  let warning: string | undefined;
+
+  if (memberOptIn) {
+    const actorId = await getCurrentUserId();
+    const memberSeed = {
+      full_name: fullName,
+      email,
+      phone: (formData.get("phone") as string)?.trim() || "",
+      father_name: (formData.get("father_name") as string)?.trim() || undefined,
+      address: (formData.get("address") as string)?.trim() || undefined,
+      occupation: (formData.get("occupation") as string)?.trim() || undefined,
+      blood_group: (formData.get("blood_group") as string)?.trim() || undefined,
+      emergency_contact: (formData.get("emergency_contact") as string)?.trim() || undefined,
+      date_joined: (formData.get("date_joined") as string)?.trim() || undefined,
+      membership_type:
+        (formData.get("membership_type") as string) || "regular",
+      status: (formData.get("status") as string) || "active",
+      notes: (formData.get("notes") as string)?.trim() || undefined,
+    };
+
+    const parsedMember = memberSchema.safeParse(memberSeed);
+    if (!parsedMember.success) {
+      warning = `Account created, but member details were invalid and skipped: ${parsedMember.error.issues[0]?.message}`;
+    } else {
+      const memberId = `MEM-${Date.now().toString().slice(-6)}`;
+      const { error: memberError } = await supabase
+        .from("members")
+        .insert({
+          ...parsedMember.data,
+          member_id: memberId,
+          user_id: data.user.id,
+          created_by: actorId,
+        });
+      if (memberError) {
+        warning = `Account created, but member record could not be saved: ${memberError.message}`;
+      }
+    }
+  }
+
   logAudit({
     action: "create",
     module: "users",
     entity: "user",
     entityId: data.user.id,
-    newData: { email, role },
+    newData: { email, role, memberOptIn },
   });
 
   revalidatePath("/admin/users");
-  return { success: true, id: data.user.id };
+  revalidatePath("/admin/members");
+  return { success: true, id: data.user.id, warning };
 }
 
 export async function updateUserRole(formData: FormData) {

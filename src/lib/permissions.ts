@@ -35,7 +35,7 @@ export const ROLE_PERMISSIONS: Record<string, string[]> = {
     "reports.view",
   ],
   imam: ["dashboard.view", "prayer.view", "prayer.update", "announcement.manage"],
-  muazzin: [],
+  muazzin: ["dashboard.view", "prayer.view"],
   committee_member: [],
   staff: [],
   member: ["dashboard.view", "donation.view.own"],

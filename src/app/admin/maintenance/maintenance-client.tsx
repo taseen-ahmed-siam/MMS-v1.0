@@ -234,7 +234,7 @@ export function MaintenanceClient({
         emptyTitle="No requests"
         emptyDescription="No maintenance requests match your current filters."
       >
-        <div className="px-4 pt-4">
+        <div className="px-4 pb-4 pt-4">
           <FilterBar
             search={searchInput}
             onSearchChange={setSearchInput}

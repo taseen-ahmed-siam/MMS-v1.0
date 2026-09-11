@@ -5,6 +5,14 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Trash2, Mail, Phone } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faEye,
+  faUser,
+  faEnvelope,
+  faPhone,
+  faCalendarDays,
+} from "@fortawesome/free-solid-svg-icons";
 
 import type { ContactRequest } from "@/types/database";
 import {
@@ -13,6 +21,7 @@ import {
 } from "@/lib/actions/admin";
 import {
   CONTACT_STATUSES,
+  CONTACT_REQUEST_TYPES,
 } from "@/constants";
 import { formatDate } from "@/lib/utils/format";
 import { DataTable } from "@/components/admin/data-table";
@@ -20,6 +29,7 @@ import { PaginationBar } from "@/components/admin/pagination-bar";
 import { FilterBar } from "@/components/admin/filter-bar";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { AdminTableWrapper } from "@/components/admin/table-wrapper";
+import { Button } from "@/components/ui/button";
 import {
   FormSelect,
   FormTextarea,
@@ -54,6 +64,7 @@ export function RequestsClient({
   const [search, setSearch] = useState(initialSearch);
   const [status, setStatus] = useState(initialStatus);
   const [updating, setUpdating] = useState<ContactRequest | null>(null);
+  const [viewing, setViewing] = useState<ContactRequest | null>(null);
   const [deleting, setDeleting] = useState<ContactRequest | null>(null);
   const [deletePending, setDeletePending] = useState(false);
 
@@ -153,6 +164,17 @@ export function RequestsClient({
           <button
             onClick={(e) => {
               e.stopPropagation();
+              setViewing(r);
+            }}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label="View"
+            title="View request"
+          >
+            <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
               setUpdating(r);
             }}
             className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -188,7 +210,7 @@ export function RequestsClient({
         emptyTitle="No requests"
         emptyDescription="No contact requests match your current filters."
       >
-        <div className="px-4 pt-4">
+        <div className="px-4 pb-4 pt-4">
           <FilterBar
             search={searchInput}
             onSearchChange={setSearchInput}
@@ -217,6 +239,11 @@ export function RequestsClient({
       <StatusUpdateDialog
         request={updating}
         onOpenChange={(o) => !o && setUpdating(null)}
+      />
+
+      <ViewRequestDialog
+        request={viewing}
+        onOpenChange={(o) => !o && setViewing(null)}
       />
 
       <ConfirmDialog
@@ -313,6 +340,113 @@ function StatusUpdateDialog({
         <FormSubmitButton onClick={handleSubmit} loading={pending}>
           Update Status
         </FormSubmitButton>
+      </div>
+    </FormDialog>
+  );
+}
+
+function ViewRequestDialog({
+  request,
+  onOpenChange,
+}: {
+  request: ContactRequest | null;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (request) setIsOpen(true);
+  }, [request]);
+
+  const close = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) onOpenChange(false);
+  };
+
+  if (!request) return null;
+
+  const typeLabel =
+    CONTACT_REQUEST_TYPES.find((t) => t.value === request.request_type)?.label ??
+    request.request_type.replace(/_/g, " ");
+  const mailto = request.email
+    ? `mailto:${request.email}?subject=Re: ${encodeURIComponent(request.subject || "Your request")}`
+    : undefined;
+
+  return (
+    <FormDialog
+      open={isOpen}
+      onOpenChange={close}
+      title="Request Details"
+      description={`Request from ${request.name}`}
+      className="sm:max-w-2xl"
+    >
+      <div className="space-y-4 pt-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center rounded-full bg-[#064E3B]/10 px-2.5 py-1 text-xs font-medium text-[#064E3B]">
+            {typeLabel}
+          </span>
+          <StatusBadge status={request.status} statuses={[...CONTACT_STATUSES]} />
+        </div>
+
+        <div className="grid gap-3 rounded-xl bg-muted/40 p-4 sm:grid-cols-2">
+          <div className="flex items-center gap-2 text-sm">
+            <FontAwesomeIcon icon={faUser} className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="font-medium">{request.name}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <FontAwesomeIcon icon={faEnvelope} className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="truncate">{request.email || "—"}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <FontAwesomeIcon icon={faPhone} className="h-3.5 w-3.5 text-muted-foreground" />
+            <span>{request.phone || "—"}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <FontAwesomeIcon icon={faCalendarDays} className="h-3.5 w-3.5 text-muted-foreground" />
+            <span>{formatDate(request.created_at, "MMM d, yyyy h:mm a")}</span>
+          </div>
+        </div>
+
+        {request.subject && (
+          <div>
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Subject
+            </p>
+            <p className="font-medium">{request.subject}</p>
+          </div>
+        )}
+
+        <div>
+          <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Message
+          </p>
+          <p className="whitespace-pre-wrap rounded-xl bg-muted/40 p-4 text-sm leading-relaxed">
+            {request.message}
+          </p>
+        </div>
+
+        {request.notes && (
+          <div>
+            <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Staff Notes
+            </p>
+            <p className="whitespace-pre-wrap text-sm">{request.notes}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="flex justify-end gap-2 pt-2">
+        {mailto && (
+          <Button asChild variant="outline">
+            <a href={mailto}>
+              <FontAwesomeIcon icon={faEnvelope} className="mr-1.5 h-3.5 w-3.5" />
+              Reply via Email
+            </a>
+          </Button>
+        )}
+        <Button variant="ghost" onClick={() => close(false)}>
+          Close
+        </Button>
       </div>
     </FormDialog>
   );

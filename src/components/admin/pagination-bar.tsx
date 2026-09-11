@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons"
 
 import { cn } from "@/lib/utils/format"
 import { Button } from "@/components/ui/button"
@@ -64,7 +65,7 @@ function PaginationBar({
           disabled={page <= 1}
           onClick={() => onPageChange(page - 1)}
         >
-          <ChevronLeft className="h-4 w-4" />
+          <FontAwesomeIcon icon={faChevronLeft} className="h-4 w-4" />
         </Button>
         <span className="text-sm font-medium">
           Page {page} of {totalPages}
@@ -75,7 +76,7 @@ function PaginationBar({
           disabled={page >= totalPages}
           onClick={() => onPageChange(page + 1)}
         >
-          <ChevronRight className="h-4 w-4" />
+          <FontAwesomeIcon icon={faChevronRight} className="h-4 w-4" />
         </Button>
       </div>
 

@@ -6,12 +6,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, UserPlus } from "lucide-react";
 import { memberSchema } from "@/lib/validations";
 import { createMember, updateMember, deleteMember } from "@/lib/actions/admin";
 import { MEMBER_STATUSES, MEMBERSHIP_TYPES } from "@/constants";
 import { formatDate } from "@/lib/utils/format";
-import type { Member } from "@/types/database";
+import type { MemberListItem } from "@/types/database";
 import { DataTable, type Column } from "@/components/admin/data-table";
 import { FilterBar } from "@/components/admin/filter-bar";
 import { PaginationBar } from "@/components/admin/pagination-bar";
@@ -29,7 +29,7 @@ import { Button } from "@/components/ui/button";
 type FormData = z.infer<typeof memberSchema>;
 
 interface MembersClientProps {
-  data: Member[];
+  data: MemberListItem[];
   total: number;
   page: number;
   totalPages: number;
@@ -63,8 +63,9 @@ export function MembersClient({
   const searchParams = useSearchParams();
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<Member | null>(null);
+  const [editingItem, setEditingItem] = useState<MemberListItem | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [linkUserId, setLinkUserId] = useState<string | null>(null);
 
   const [createState, createFormAction, isCreating] = useActionState(createMember, {});
   const [updateState, updateFormAction, isUpdating] = useActionState(updateMember, {});
@@ -116,19 +117,25 @@ export function MembersClient({
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  const openCreate = () => {
+  const openCreate = (item?: MemberListItem) => {
     setEditingItem(null);
-    form.reset(defaultValues);
+    setLinkUserId(item?.source === "profile" ? item.id : null);
+    form.reset({
+      ...defaultValues,
+      full_name: item?.full_name ?? "",
+      email: item?.email ?? "",
+    });
     setDialogOpen(true);
   };
 
-  const openEdit = (item: Member) => {
+  const openEdit = (item: MemberListItem) => {
+    setLinkUserId(null);
     setEditingItem(item);
     form.reset({
       full_name: item.full_name,
-      phone: item.phone,
-      membership_type: item.membership_type,
-      status: item.status,
+      phone: item.phone ?? "",
+      membership_type: item.membership_type ?? "regular",
+      status: (item.status as FormData["status"]) || "active",
       father_name: item.father_name ?? "",
       email: item.email ?? "",
       address: item.address ?? "",
@@ -169,14 +176,21 @@ export function MembersClient({
         fd.set("id", editingItem.id);
         updateFormAction(fd);
       } else {
+        if (linkUserId) fd.set("user_id", linkUserId);
         createFormAction(fd);
       }
     });
   });
 
-  const columns: Column<Member>[] = [
+  const hasPendingProfiles = data.some((row) => row.source === "profile");
+
+  const columns: Column<MemberListItem>[] = [
     { key: "member_id", header: "ID", cell: (row) => (
-      <span className="text-muted-foreground">{row.member_id}</span>
+      row.source === "profile" ? (
+        <span className="text-xs font-semibold uppercase tracking-wide text-sky-600">Account</span>
+      ) : (
+        <span className="text-muted-foreground">{row.member_id}</span>
+      )
     )},
     { key: "full_name", header: "Name", cell: (row) => (
       <div>
@@ -184,33 +198,47 @@ export function MembersClient({
         {row.email && <p className="text-xs text-muted-foreground">{row.email}</p>}
       </div>
     )},
-    { key: "phone", header: "Phone", cell: (row) => row.phone },
+    { key: "phone", header: "Phone", cell: (row) => row.phone ?? "—" },
     { key: "membership_type", header: "Type", cell: (row) => (
-      <span className="capitalize">{row.membership_type}</span>
+      <span className="capitalize">{row.membership_type ?? "—"}</span>
     )},
     { key: "status", header: "Status", cell: (row) => (
       <StatusBadge status={row.status} statuses={[...MEMBER_STATUSES]} />
     )},
     { key: "date_joined", header: "Joined", cell: (row) => (
-      <span className="text-sm text-muted-foreground">{formatDate(row.date_joined)}</span>
+      <span className="text-sm text-muted-foreground">{formatDate(row.date_joined ?? row.created_at)}</span>
     )},
     { key: "actions", header: "", cell: (row) => (
-      <div className="flex items-center gap-1">
-        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openEdit(row); }}>
-          <Pencil className="h-4 w-4" />
+      row.source === "profile" ? (
+        <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); openCreate(row); }}>
+          <UserPlus className="mr-1 h-4 w-4" />
+          Add Details
         </Button>
-        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeleteId(row.id); }}>
-          <Trash2 className="h-4 w-4 text-destructive" />
-        </Button>
-      </div>
-    ), className: "w-24" },
+      ) : (
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openEdit(row); }}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setDeleteId(row.id); }}>
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
+      )
+    ), className: "w-40" },
   ];
 
   return (
     <div className="space-y-6">
       <PageHeader title="Members" description="Manage mosque members">
-        <Button size="sm" onClick={openCreate}>Add Member</Button>
+        <Button size="sm" onClick={() => openCreate()}>Add Member</Button>
       </PageHeader>
+
+      {hasPendingProfiles && (
+        <div className="rounded-xl bg-sky-50 text-sky-800 text-sm p-3 border border-sky-200">
+          Member role-এর account যাদের member record নেই, তারা নিচে {"\u201C"}Account{"\u201D"} হিসেবে
+          দেখাচ্ছে। এদের {"\u201C"}Add Details{"\u201D"} দিয়ে পূর্ণ member হিসাবে যোগ করতে পারবেন।
+        </div>
+      )}
 
       <FilterBar
         search={filters.search}
@@ -241,8 +269,11 @@ export function MembersClient({
 
       <FormDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        title={editingItem ? "Edit Member" : "Add Member"}
+        onOpenChange={(o) => {
+          setDialogOpen(o);
+          if (!o) setLinkUserId(null);
+        }}
+        title={editingItem ? "Edit Member" : linkUserId ? "Add Member Details" : "Add Member"}
         footer={
           <div className="flex w-full gap-2 sm:justify-end">
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>

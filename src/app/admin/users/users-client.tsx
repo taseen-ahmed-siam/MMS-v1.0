@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Shield, UserCheck, UserX } from "lucide-react";
 import { updateUserRole, toggleUserStatus, createUserAccount } from "@/lib/actions/admin";
-import { USER_ROLES } from "@/constants";
+import { USER_ROLES, MEMBER_STATUSES, MEMBERSHIP_TYPES } from "@/constants";
 import { formatDate } from "@/lib/utils/format";
 import { DataTable, type Column } from "@/components/admin/data-table";
 import { FilterBar } from "@/components/admin/filter-bar";
@@ -17,7 +17,21 @@ import { FormInput, FormSubmitButton } from "@/components/forms";
 import { FormSelect } from "@/components/forms/form-select";
 import { PageActions } from "@/components/admin/page-actions";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import type { Profile } from "@/types/database";
+
+const initialMemberFields = {
+  phone: "",
+  father_name: "",
+  address: "",
+  occupation: "",
+  blood_group: "",
+  emergency_contact: "",
+  date_joined: "",
+  membership_type: "regular",
+  status: "active",
+  notes: "",
+};
 
 const userStatuses = [
   { value: "active", label: "Active", color: "text-green-600" },
@@ -52,10 +66,16 @@ export function UsersClient({ data, currentRole }: UsersClientProps) {
     password: "",
     role: "",
   });
+  const [alsoAddMember, setAlsoAddMember] = useState(false);
+  const [memberFields, setMemberFields] = useState(initialMemberFields);
 
   const handleCreate = async () => {
     if (!createFields.email || !createFields.password) {
       setCreateError("Email and password are required");
+      return;
+    }
+    if (alsoAddMember && !memberFields.phone) {
+      setCreateError("Phone is required when adding as a mosque member");
       return;
     }
     setCreating(true);
@@ -65,14 +85,23 @@ export function UsersClient({ data, currentRole }: UsersClientProps) {
     fd.set("email", createFields.email);
     fd.set("password", createFields.password);
     fd.set("role", createFields.role || "member");
+    if (alsoAddMember) {
+      fd.set("create_member", "on");
+      Object.entries(memberFields).forEach(([key, value]) => {
+        if (value) fd.set(key, value);
+      });
+    }
     const res = await createUserAccount(fd);
     setCreating(false);
     if (res?.error) {
       setCreateError(res.error);
     } else {
       toast.success("User account created. Share the email & password with them.");
+      if (res?.warning) toast.warning(res.warning);
       setCreateOpen(false);
       setCreateFields({ full_name: "", email: "", password: "", role: "" });
+      setAlsoAddMember(false);
+      setMemberFields(initialMemberFields);
       router.refresh();
     }
   };
@@ -274,6 +303,92 @@ export function UsersClient({ data, currentRole }: UsersClientProps) {
             options={USER_ROLES.map((r) => ({ value: r.value, label: r.label }))}
             placeholder="Member (default)"
           />
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-black/5 bg-slate-50 p-3">
+            <div>
+              <p className="text-sm font-medium">আরও mosque member হিসেবে যোগ করুন</p>
+              <p className="text-xs text-muted-foreground">
+                Account-এর সাথে linked member record-ও তৈরি হবে
+              </p>
+            </div>
+            <Switch checked={alsoAddMember} onCheckedChange={setAlsoAddMember} />
+          </div>
+          {alsoAddMember && (
+            <div className="space-y-4 rounded-xl border border-black/5 bg-slate-50 p-3">
+              <FormInput
+                label="Phone"
+                name="member_phone"
+                value={memberFields.phone}
+                onChange={(e) => setMemberFields({ ...memberFields, phone: e.target.value })}
+                placeholder="01XXXXXXXXX"
+                required
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormSelect
+                  label="Membership Type"
+                  name="member_membership_type"
+                  value={memberFields.membership_type}
+                  onValueChange={(v) => setMemberFields({ ...memberFields, membership_type: v })}
+                  options={MEMBERSHIP_TYPES.map((t) => ({ value: t.value, label: t.label }))}
+                />
+                <FormSelect
+                  label="Status"
+                  name="member_status"
+                  value={memberFields.status}
+                  onValueChange={(v) => setMemberFields({ ...memberFields, status: v })}
+                  options={MEMBER_STATUSES.map((s) => ({ value: s.value, label: s.label }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <FormInput
+                  label="Father's Name"
+                  name="member_father_name"
+                  value={memberFields.father_name}
+                  onChange={(e) => setMemberFields({ ...memberFields, father_name: e.target.value })}
+                />
+                <FormInput
+                  label="Address"
+                  name="member_address"
+                  value={memberFields.address}
+                  onChange={(e) => setMemberFields({ ...memberFields, address: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <FormInput
+                  label="Occupation"
+                  name="member_occupation"
+                  value={memberFields.occupation}
+                  onChange={(e) => setMemberFields({ ...memberFields, occupation: e.target.value })}
+                />
+                <FormInput
+                  label="Blood Group"
+                  name="member_blood_group"
+                  value={memberFields.blood_group}
+                  onChange={(e) => setMemberFields({ ...memberFields, blood_group: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <FormInput
+                  label="Emergency Contact"
+                  name="member_emergency_contact"
+                  value={memberFields.emergency_contact}
+                  onChange={(e) => setMemberFields({ ...memberFields, emergency_contact: e.target.value })}
+                />
+                <FormInput
+                  label="Date Joined"
+                  name="member_date_joined"
+                  type="date"
+                  value={memberFields.date_joined}
+                  onChange={(e) => setMemberFields({ ...memberFields, date_joined: e.target.value })}
+                />
+              </div>
+              <FormInput
+                label="Notes"
+                name="member_notes"
+                value={memberFields.notes}
+                onChange={(e) => setMemberFields({ ...memberFields, notes: e.target.value })}
+              />
+            </div>
+          )}
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="outline" onClick={() => setCreateOpen(false)}>
               Cancel

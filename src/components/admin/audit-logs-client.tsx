@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ScrollText } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faScroll } from "@fortawesome/free-solid-svg-icons";
 import { DataTable } from "@/components/admin/data-table";
 import { AdminTableWrapper } from "@/components/admin/table-wrapper";
 import { FilterBar } from "@/components/admin/filter-bar";
@@ -78,8 +79,8 @@ function AuditLogsClient({
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10">
-          <ScrollText className="h-5 w-5 text-primary" />
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#064E3B]/10">
+          <FontAwesomeIcon icon={faScroll} className="h-5 w-5 text-[#064E3B]" />
         </div>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Audit Logs</h1>

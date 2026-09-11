@@ -176,7 +176,29 @@ export interface Member {
   created_at: string;
   updated_at: string;
   created_by: string | null;
+  user_id: string | null;
   deleted_at: string | null;
+}
+
+export interface MemberListItem {
+  id: string;
+  source: "member" | "profile";
+  member_id: string | null;
+  user_id: string | null;
+  full_name: string;
+  father_name: string | null;
+  photo_url: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  occupation: string | null;
+  blood_group: string | null;
+  emergency_contact: string | null;
+  date_joined: string | null;
+  membership_type: Member['membership_type'] | null;
+  status: string;
+  notes: string | null;
+  created_at: string;
 }
 
 export interface CommitteeMember {

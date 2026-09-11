@@ -5,6 +5,7 @@ import type {
   Expense,
   Income,
   Member,
+  MemberListItem,
   Event,
   Announcement,
   CommitteeMember,
@@ -42,6 +43,7 @@ export async function getDashboardStats() {
     incomes,
     expenses,
     members,
+    memberProfiles,
     funds,
     events,
     requests,
@@ -49,10 +51,11 @@ export async function getDashboardStats() {
     supabase.from("donations").select("*").gte("donation_date", monthStart).is("deleted_at", null),
     supabase.from("incomes").select("*").gte("date", monthStart).is("deleted_at", null),
     supabase.from("expenses").select("*").gte("date", monthStart).is("deleted_at", null),
-    supabase.from("members").select("id").eq("status", "active").is("deleted_at", null),
-    supabase.from("donation_funds").select("id").eq("status", "active"),
-    supabase.from("events").select("id").eq("status", "published").gte("start_date", today.toISOString().split("T")[0]),
-    supabase.from("contact_requests").select("id").eq("status", "new"),
+    supabase.from("members").select("*").is("deleted_at", null),
+    supabase.from("profiles").select("*").eq("role", "member"),
+    supabase.from("donation_funds").select("id", { count: "exact", head: true }).eq("status", "active"),
+    supabase.from("events").select("id", { count: "exact", head: true }).eq("status", "published").gte("start_date", today.toISOString().split("T")[0]),
+    supabase.from("contact_requests").select("id", { count: "exact", head: true }).eq("status", "new"),
   ]);
 
   const donationsThisMonth = (donations.data || []).filter(
@@ -72,7 +75,10 @@ export async function getDashboardStats() {
     incomeThisMonth,
     expensesThisMonth,
     currentBalance: incomeThisMonth - expensesThisMonth,
-    totalMembers: members.count || 0,
+    totalMembers: buildMemberList(
+      (members.data as Member[]) ?? [],
+      (memberProfiles.data as Profile[]) ?? []
+    ).filter((m) => m.status === "active").length,
     activeFunds: funds.count || 0,
     upcomingEvents: events.count || 0,
     pendingRequests: requests.count || 0,
@@ -348,6 +354,74 @@ export async function getIncomes({
   };
 }
 
+export function memberFromMemberRow(row: Member): MemberListItem {
+  return {
+    source: "member",
+    id: row.id,
+    member_id: row.member_id,
+    user_id: row.user_id ?? null,
+    full_name: row.full_name,
+    father_name: row.father_name,
+    photo_url: row.photo_url,
+    phone: row.phone,
+    email: row.email,
+    address: row.address,
+    occupation: row.occupation,
+    blood_group: row.blood_group,
+    emergency_contact: row.emergency_contact,
+    date_joined: row.date_joined,
+    membership_type: row.membership_type,
+    status: row.status,
+    notes: row.notes,
+    created_at: row.created_at,
+  };
+}
+
+export function memberFromProfile(row: Profile): MemberListItem {
+  return {
+    source: "profile",
+    id: row.id,
+    member_id: null,
+    user_id: row.id,
+    full_name: row.full_name,
+    father_name: null,
+    photo_url: row.avatar_url,
+    phone: row.phone,
+    email: row.email,
+    address: null,
+    occupation: null,
+    blood_group: null,
+    emergency_contact: null,
+    date_joined: row.created_at ? row.created_at.split("T")[0] : null,
+    membership_type: null,
+    status: row.status,
+    notes: null,
+    created_at: row.created_at,
+  };
+}
+
+export function buildMemberList(
+  members: Member[],
+  profiles: Profile[]
+): MemberListItem[] {
+  const linkedIds = new Set<string>();
+  const memberEmails = new Set<string>();
+  members.forEach((m) => {
+    if (m.user_id) linkedIds.add(m.user_id);
+    if (m.email) memberEmails.add(m.email.toLowerCase());
+  });
+
+  const list: MemberListItem[] = members.map(memberFromMemberRow);
+  profiles.forEach((profile) => {
+    if (profile.role !== "member") return;
+    if (linkedIds.has(profile.id)) return;
+    if (profile.email && memberEmails.has(profile.email.toLowerCase())) return;
+    list.push(memberFromProfile(profile));
+  });
+
+  return list.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+}
+
 export async function getMembers({
   search = "",
   status,
@@ -362,28 +436,41 @@ export async function getMembers({
   pageSize?: number;
 } = {}) {
   const supabase = await createClient();
-  let query = supabase
-    .from("members")
-    .select("*", { count: "exact" })
-    .is("deleted_at", null);
+  const [membersResult, profilesResult] = await Promise.all([
+    supabase.from("members").select("*").is("deleted_at", null),
+    supabase.from("profiles").select("*").eq("role", "member"),
+  ]);
 
-  if (search) {
-    query = query.or(`full_name.ilike.%${search}%,member_id.ilike.%${search}%,phone.ilike.%${search}%`);
+  const list = buildMemberList(
+    (membersResult.data as Member[]) ?? [],
+    (profilesResult.data as Profile[]) ?? []
+  );
+
+  const q = search.trim().toLowerCase();
+  let filtered = list;
+  if (q) {
+    filtered = filtered.filter(
+      (m) =>
+        m.full_name?.toLowerCase().includes(q) ||
+        m.member_id?.toLowerCase().includes(q) ||
+        m.phone?.toLowerCase().includes(q) ||
+        m.email?.toLowerCase().includes(q)
+    );
   }
-  if (status) query = query.eq("status", status);
-  if (membershipType) query = query.eq("membership_type", membershipType);
+  if (status) filtered = filtered.filter((m) => m.status === status);
+  if (membershipType) {
+    filtered = filtered.filter((m) => m.membership_type === membershipType);
+  }
 
   const fromIndex = (page - 1) * pageSize;
-  const { data, count } = await query
-    .order("created_at", { ascending: false })
-    .range(fromIndex, fromIndex + pageSize - 1);
+  const pageData = filtered.slice(fromIndex, fromIndex + pageSize);
 
   return {
-    data: (data as Member[]) ?? [],
-    total: count ?? 0,
+    data: pageData,
+    total: filtered.length,
     page,
     pageSize,
-    totalPages: Math.ceil((count ?? 0) / pageSize),
+    totalPages: Math.ceil(filtered.length / pageSize),
   };
 }
 
@@ -868,9 +955,21 @@ export async function getMyDonations({
     .order("donation_date", { ascending: false })
     .range(fromIndex, fromIndex + pageSize - 1);
 
+  const { data: amountRows } = await supabase
+    .from("donations")
+    .select("amount")
+    .eq("user_id", userId)
+    .is("deleted_at", null);
+
+  const totalAmount = (amountRows ?? []).reduce(
+    (sum, row) => sum + Number((row as { amount: number }).amount ?? 0),
+    0
+  );
+
   return {
     data: (data as (Donation & { donation_funds: { name: string } | null })[]) ?? [],
     total: count ?? 0,
+    totalAmount,
     page,
     pageSize,
     totalPages: Math.ceil((count ?? 0) / pageSize),

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Amiri, Noto_Sans_Bengali } from "next/font/google";
+import Script from "next/script";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -63,8 +64,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${amiri.variable} ${notoSansBengali.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <script
-          suppressHydrationWarning
+        <Script
+          id="strip-extension-attrs"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `(function(){
   var isExtAttr=function(n){return n.indexOf("bis_")===0||n.indexOf("__processed_")===0;};
