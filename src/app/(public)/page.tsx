@@ -12,6 +12,15 @@ import { OrnamentalDivider } from "@/components/public/islamic";
 import { formatTime, getHijriDate, formatDate } from "@/lib/utils/format";
 import { CURRENCY_SYMBOL } from "@/constants";
 
+function getMapEmbedUrl(mapUrl: string | null | undefined, address: string) {
+  const coordinateMatch = mapUrl?.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  if (coordinateMatch) {
+    return `https://www.google.com/maps?q=${coordinateMatch[1]},${coordinateMatch[2]}&z=17&output=embed`;
+  }
+
+  return `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`;
+}
+
 export const metadata: Metadata = {
   title: "Welcome to Al-Noor Mosque",
   description:
@@ -28,6 +37,8 @@ export default async function HomePage() {
   const khutbahs = await getLatestKhutbahs(3);
   const committee = await getCurrentCommittee();
   const funds = await getVisibleFunds(4);
+  const mosqueAddress = settings?.address || "123 Main Street, Dhaka, Bangladesh";
+  const mapUrl = getMapEmbedUrl(settings?.google_maps_url, mosqueAddress);
 
   const today = new Date();
 
@@ -122,7 +133,7 @@ export default async function HomePage() {
               title="Today's Prayer Schedule"
               description="Fajr, Dhuhr, Asr, Maghrib and Isha — with adhan and jamaat times."
             />
-            <div className="mt-10">
+            <div className="mx-auto mt-10 max-w-2xl">
               <PrayerCard prayerTime={prayerTime} />
             </div>
 
@@ -346,40 +357,38 @@ export default async function HomePage() {
       <section className="py-18 bg-background">
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           <SectionHeading title="Find Our Mosque" />
-          <div className="mt-8 space-y-8">
-            <div className="grid gap-6 sm:grid-cols-3">
-              <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-primary mt-0.5" />
-                <div>
+          <div className="mx-auto mt-8 grid max-w-5xl items-stretch gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:gap-8">
+            <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+              <div className="flex min-h-24 items-start gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
+                <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                <div className="min-w-0">
                   <p className="font-medium">Address</p>
-                  <p className="text-muted-foreground">{settings?.address || "123 Main Street, Dhaka, Bangladesh"}</p>
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">{mosqueAddress}</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <Users className="h-5 w-5 text-primary mt-0.5" />
+              <div className="flex min-h-24 items-start gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
+                <Users className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                 <div>
                   <p className="font-medium">Phone</p>
-                  <p className="text-muted-foreground">{settings?.phone || "+880 1712 345 678"}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{settings?.phone || "+880 1712 345 678"}</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <Heart className="h-5 w-5 text-primary mt-0.5" />
+              <div className="flex min-h-24 items-start gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm">
+                <Heart className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                 <div>
                   <p className="font-medium">Email</p>
-                  <p className="text-muted-foreground">{settings?.email || "info@alnoormosque.org"}</p>
+                  <p className="mt-1 break-all text-sm text-muted-foreground">{settings?.email || "info@alnoormosque.org"}</p>
                 </div>
               </div>
             </div>
-            {settings?.google_maps_url && (
-              <div className="bg-card rounded-2xl overflow-hidden shadow-sm border h-64">
-                <iframe
-                  src={settings.google_maps_url}
-                  title="Mosque Location"
-                  className="w-full h-full"
-                  loading="lazy"
-                />
-              </div>
-            )}
+            <div className="min-h-80 overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+              <iframe
+                src={mapUrl}
+                title="Mosque Location on Google Maps"
+                className="h-full min-h-80 w-full"
+                loading="lazy"
+              />
+            </div>
           </div>
         </div>
       </section>
