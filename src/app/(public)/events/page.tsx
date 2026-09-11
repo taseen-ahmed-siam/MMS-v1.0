@@ -19,7 +19,7 @@ export default async function EventsPage() {
     <div>
       <PageHeader
         title="Events"
-        description="Discover upcoming programs, lectures, and community gatherings."
+        description="আসন্ন কর্মসূচি, বক্তৃতা এবং সামাজিক সমাবেশ সম্পর্কে জানুন।"
       />
 
       <section className="py-16 bg-background">
@@ -29,7 +29,7 @@ export default async function EventsPage() {
               <SectionHeading
                 eyebrow="Community"
                 title="Upcoming Events"
-                description="Join us for these upcoming programs at the mosque."
+                description="আমাদের মসজিদে আসন্ন অনুষ্ঠানগুলোতে আমাদের সাথে যোগ দিন।"
               />
               <div className="mx-auto mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {events.map((event) => (

@@ -64,7 +64,7 @@ export default async function HomePage() {
             </h1>
             <OrnamentalDivider tone="light" className="max-w-md mx-auto" />
             <p className="text-lg md:text-xl text-emerald-100 max-w-2xl mx-auto mt-4 leading-relaxed">
-              A house of Allah — a place of peace, knowledge and community. Join us in worship and service.
+              আল্লাহর ঘর — শান্তি, জ্ঞান এবং সম্প্রদায়ের স্থান। আমাদের সাথে ইবাদত ও খেদমতে যুক্ত হোন।
             </p>
 
             <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto">

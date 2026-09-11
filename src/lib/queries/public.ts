@@ -219,6 +219,7 @@ export interface GalleryImage {
   src: string;
   alt: string;
   category: string;
+  description?: string;
 }
 
 export async function getGalleryImages(): Promise<GalleryImage[]> {
@@ -263,5 +264,52 @@ export async function getGalleryImages(): Promise<GalleryImage[]> {
     })),
   ];
 
-  return out;
+  if (out.length > 0) return out;
+
+  return DEMO_GALLERY_IMAGES;
 }
+
+const DEMO_GALLERY_IMAGES: GalleryImage[] = [
+  {
+    src: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Masjid_al-Qiblatain.jpg/960px-Masjid_al-Qiblatain.jpg",
+    alt: "Masjid al-Qiblatain, Medina",
+    category: "Mosque",
+    description:
+      "Masjid al-Qiblatain, the Mosque of the Two Qiblas, is a historic mosque in Medina. It is believed to be where the qibla (direction of prayer) was changed from Jerusalem to the Kaaba in Mecca.",
+  },
+  {
+    src: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/View_of_Quba_Masjid.jpg/960px-View_of_Quba_Masjid.jpg",
+    alt: "Quba Mosque, Medina",
+    category: "Mosque",
+    description:
+      "Quba Mosque is the first mosque in Islamic history, built in 622 CE by Prophet Muhammad (PBUH). Its modern design was crafted by the renowned architect Abdel-Wahed El-Wakil.",
+  },
+  {
+    src: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Kalan_Mosque_01.jpg/960px-Kalan_Mosque_01.jpg",
+    alt: "Kalan Mosque, Bukhara",
+    category: "Mosque",
+    description:
+      "Kalan Mosque is part of the Po-i-Kalan complex in Bukhara, Uzbekistan. Completed in 1514, it is one of Central Asia's largest mosques, famous for its vast courtyard and hundreds of blue-tiled domes.",
+  },
+  {
+    src: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Omar_Ali_Saifuddien_Mosque%2C_Bandar_Seri_Begawan%2C_Brunei.jpg/960px-Omar_Ali_Saifuddien_Mosque%2C_Bandar_Seri_Begawan%2C_Brunei.jpg",
+    alt: "Omar Ali Saifuddien Mosque, Brunei",
+    category: "Mosque",
+    description:
+      "Set beside the Brunei River, this royal mosque features a striking golden dome and marble minarets. Completed in 1958, it is one of the most beautiful landmarks in Southeast Asia.",
+  },
+  {
+    src: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Jama_Masjid%2C_Delhi_-_IMGL5610.jpg/960px-Jama_Masjid%2C_Delhi_-_IMGL5610.jpg",
+    alt: "Jama Masjid, Delhi",
+    category: "Mosque",
+    description:
+      "Built by Mughal Emperor Shah Jahan between 1650 and 1656, Jama Masjid is one of the largest mosques in India. Its grand courtyard, marble domes, and red sandstone minarets define Old Delhi's skyline.",
+  },
+  {
+    src: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Begum_Shahi_Mosque%2C_Lahore%2CPakistan.jpg/500px-Begum_Shahi_Mosque%2C_Lahore%2CPakistan.jpg",
+    alt: "Begum Shahi Mosque, Lahore",
+    category: "Mosque",
+    description:
+      "Begum Shahi Mosque is one of Lahore's earliest Mughal-era mosques, built in 1611 for Emperor Jahangir's mother. It is celebrated for its intricate floral frescoes and rich historic heritage.",
+  },
+];

@@ -19,7 +19,7 @@ export default async function AboutPage() {
     <div>
       <PageHeader
         title="About Our Mosque"
-        description="A house of Allah — a place of peace, knowledge, and community."
+        description="আল্লাহর ঘর — শান্তি, জ্ঞান এবং সম্প্রদায়ের স্থান।"
       />
 
       {/* OUR HISTORY */}

@@ -126,17 +126,7 @@ export function Navbar({ settings }: NavbarProps) {
           mobileOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
-        <div className="flex h-16 items-center justify-between border-b border-[#C8A951]/40 px-4">
-          <Image
-            src="/logo.png"
-            alt={mosqueName}
-            width={140}
-            height={40}
-            priority
-            className="h-11 w-auto"
-            sizes="140px"
-          />
-          <span className="sr-only">{mosqueName}</span>
+        <div className="flex h-16 items-center justify-end border-b border-[#C8A951]/40 px-4">
           <button
             onClick={() => setMobileOpen(false)}
             className="rounded-lg p-2 text-white hover:bg-white/10"
