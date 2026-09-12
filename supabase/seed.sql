@@ -95,6 +95,16 @@ JOIN permissions p ON p.name IN (
 WHERE r.name = 'imam'
 ON CONFLICT DO NOTHING;
 
+-- muazzin gets prayer and announcement management
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.id, p.id
+FROM roles r
+JOIN permissions p ON p.name IN (
+  'dashboard.view','prayer.view','announcement.manage'
+)
+WHERE r.name = 'muazzin'
+ON CONFLICT DO NOTHING;
+
 -- ============================================================
 -- MOSQUE SETTINGS (DEFAULT)
 -- ============================================================

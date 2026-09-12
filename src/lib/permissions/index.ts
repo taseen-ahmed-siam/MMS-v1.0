@@ -75,7 +75,7 @@ const ROLE_DEFAULT_PERMISSIONS: Record<UserRole, PermissionName[]> = {
     "reports.view",
   ],
   imam: ["dashboard.view", "prayer.view", "prayer.update", "announcement.manage"],
-  muazzin: ["dashboard.view", "prayer.view"],
+  muazzin: ["dashboard.view", "prayer.view", "announcement.manage"],
   committee_member: ["dashboard.view", "prayer.view", "member.view", "reports.view"],
   staff: ["dashboard.view", "prayer.view"],
   member: ["prayer.view"],
