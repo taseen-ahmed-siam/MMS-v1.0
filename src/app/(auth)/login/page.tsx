@@ -2,9 +2,9 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Mail, Lock, Loader2 } from "lucide-react";
 import { loginAction, type AuthActionState } from "@/lib/auth/actions";
-import { MosqueIcon } from "@/components/public/islamic";
 
 const initialState: AuthActionState = { error: null };
 
@@ -18,16 +18,15 @@ export default function LoginPage() {
     <div className="min-h-screen flex">
       <div className="hidden lg:flex lg:w-1/2 bg-primary islamic-pattern-dark relative items-center justify-center p-12">
         <div className="relative z-10 text-center text-primary-foreground">
-          <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
-            <MosqueIcon size="h-12 w-12" className="text-accent" />
-          </div>
-          <h1 className="text-4xl font-bold mb-4">Al-Noor Mosque</h1>
-          <p className="text-lg text-white/80 max-w-sm mx-auto">
-            Managing our community with faith and purpose
-          </p>
-          <div className="mt-12 ornamental-separator text-white/60">
-            <span className="text-accent text-2xl">&#9830;</span>
-          </div>
+            <Image
+              src="/logo.png"
+              alt="Al-Noor Mosque"
+              width={180}
+              height={56}
+              priority
+              className="mx-auto h-32 w-auto drop-shadow-lg"
+              sizes="180px"
+            />
         </div>
         <div className="absolute inset-0 bg-gradient-to-br from-primary-dark/50 to-primary/80" />
       </div>
@@ -35,10 +34,15 @@ export default function LoginPage() {
       <div className="flex w-full lg:w-1/2 items-center justify-center bg-background p-6 sm:p-12">
         <div className="w-full max-w-md space-y-8">
           <div className="lg:hidden text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-              <MosqueIcon size="h-8 w-8" className="text-primary" />
-            </div>
-            <h1 className="text-2xl font-bold text-primary">Al-Noor Mosque</h1>
+            <Image
+              src="/logo.png"
+              alt="Al-Noor Mosque"
+              width={160}
+              height={48}
+              priority
+              className="mx-auto mb-6 h-20 w-auto object-contain"
+              sizes="160px"
+            />
           </div>
 
           <div>
