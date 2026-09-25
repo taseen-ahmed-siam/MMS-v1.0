@@ -60,13 +60,17 @@ export function isSuperAdmin(role: string | null | undefined): boolean {
 }
 
 export type NavVisibility =
-  | { kind: "permission"; permission: string }
+  | { kind: "permission"; permission: string; excludedRoles?: string[] }
   | { kind: "super_admin" }
   | { kind: "admin" };
 
 export const NAV_PERMISSIONS: Record<string, NavVisibility> = {
   "/admin": { kind: "permission", permission: "dashboard.view" },
-  "/admin/my-donations": { kind: "permission", permission: "donation.view.own" },
+  "/admin/my-donations": {
+    kind: "permission",
+    permission: "donation.view.own",
+    excludedRoles: [SUPER_ADMIN, ADMIN],
+  },
   "/admin/prayer-times": { kind: "permission", permission: "prayer.view" },
   "/admin/announcements": { kind: "permission", permission: "announcement.manage" },
   "/admin/events": { kind: "permission", permission: "event.manage" },
@@ -94,6 +98,9 @@ export const NAV_PERMISSIONS: Record<string, NavVisibility> = {
 export function navItemAllowed(role: string | null | undefined, href: string): boolean {
   const visibility = NAV_PERMISSIONS[href];
   if (!visibility) return false;
+  if (visibility.kind === "permission" && visibility.excludedRoles?.includes(role ?? "")) {
+    return false;
+  }
   if (visibility.kind === "permission") return roleHasPermission(role, visibility.permission);
   if (visibility.kind === "super_admin") return isSuperAdmin(role);
   if (visibility.kind === "admin") return isAdmin(role);

@@ -112,6 +112,7 @@ export async function createDonation(
   });
 
   revalidatePath("/admin/donations");
+  revalidatePath("/admin/funds");
   revalidatePath("/admin");
   return { success: true, id: data?.id };
 }
@@ -150,6 +151,7 @@ export async function updateDonation(
   });
 
   revalidatePath("/admin/donations");
+  revalidatePath("/admin/funds");
   revalidatePath("/admin");
   return { success: true, id };
 }
@@ -175,6 +177,7 @@ export async function deleteDonation(formData: FormData) {
   });
 
   revalidatePath("/admin/donations");
+  revalidatePath("/admin/funds");
   revalidatePath("/admin");
   return { success: true };
 }
@@ -204,6 +207,7 @@ export async function approveDonation(formData: FormData) {
   });
 
   revalidatePath("/admin/donations");
+  revalidatePath("/admin/funds");
   revalidatePath("/admin");
   return { success: true };
 }
@@ -240,6 +244,7 @@ export async function rejectDonation(formData: FormData) {
   });
 
   revalidatePath("/admin/donations");
+  revalidatePath("/admin/funds");
   revalidatePath("/admin");
   return { success: true };
 }

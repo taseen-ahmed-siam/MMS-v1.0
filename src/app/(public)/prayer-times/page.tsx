@@ -3,10 +3,10 @@ import { Clock, Calendar } from "lucide-react";
 import {
   getMosqueSettings,
   getTodayPrayerTimes,
-  getRecentPrayerDates,
+  getUpcomingPrayerDates,
   getLatestJummah,
 } from "@/lib/queries/public";
-import { MOSQUE_TIMEZONE } from "@/lib/prayer-times";
+import { MOSQUE_TIMEZONE, localDateInTimeZone } from "@/lib/prayer-times";
 import { PageHeader } from "@/components/public/page-header";
 import { SectionHeading } from "@/components/public/section-heading";
 import { PrayerCard } from "@/components/public/prayer-card";
@@ -23,18 +23,33 @@ export const metadata: Metadata = {
 export default async function PrayerTimesPage() {
   const settings = await getMosqueSettings();
   const timezone = settings?.timezone || MOSQUE_TIMEZONE;
-  const todayPrayer = await getTodayPrayerTimes(undefined, timezone);
-  const recentDates = await getRecentPrayerDates(7);
-  const jummah = await getLatestJummah();
+  const upcomingDates = await getUpcomingPrayerDates(7, timezone);
+  const todayDate = localDateInTimeZone(new Date(), timezone);
+  const todayPrayer =
+    upcomingDates.find((prayerTime) => prayerTime.date === todayDate) ??
+    (await getTodayPrayerTimes(todayDate, timezone));
+  const jummah = await getLatestJummah(timezone);
 
   const prayerSlots: PrayerSlot[] = todayPrayer
     ? [
-        { name: "Fajr", time: todayPrayer.fajr_jamaat || todayPrayer.fajr_adhan },
+        {
+          name: "Fajr",
+          time: todayPrayer.fajr_jamaat || todayPrayer.fajr_adhan,
+        },
         { name: "Sunrise", time: todayPrayer.sunrise },
-        { name: "Dhuhr", time: todayPrayer.dhuhr_jamaat || todayPrayer.dhuhr_adhan },
+        {
+          name: "Dhuhr",
+          time: todayPrayer.dhuhr_jamaat || todayPrayer.dhuhr_adhan,
+        },
         { name: "Asr", time: todayPrayer.asr_jamaat || todayPrayer.asr_adhan },
-        { name: "Maghrib", time: todayPrayer.maghrib_jamaat || todayPrayer.maghrib_adhan },
-        { name: "Isha", time: todayPrayer.isha_jamaat || todayPrayer.isha_adhan },
+        {
+          name: "Maghrib",
+          time: todayPrayer.maghrib_jamaat || todayPrayer.maghrib_adhan,
+        },
+        {
+          name: "Isha",
+          time: todayPrayer.isha_jamaat || todayPrayer.isha_adhan,
+        },
       ].filter((p): p is PrayerSlot => Boolean(p.time))
     : [];
 
@@ -88,7 +103,7 @@ export default async function PrayerTimesPage() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <SectionHeading
               eyebrow="Friday"
-              title="Jumu&apos;ah Schedule"
+              title="Jumu'ah Schedule"
               description="Khutbah and Jamaat times for the upcoming Friday congregations."
             />
             <div className="mx-auto mt-8 grid max-w-3xl gap-4 sm:grid-cols-2">
@@ -112,14 +127,23 @@ export default async function PrayerTimesPage() {
                   </div>
                   <div className="space-y-1 text-sm text-muted-foreground">
                     <p>
-                      Khutbah: <span className="font-medium text-foreground">{formatTime(j.khutbah_time)}</span>
+                      Khutbah:{" "}
+                      <span className="font-medium text-foreground">
+                        {formatTime(j.khutbah_time)}
+                      </span>
                     </p>
                     <p>
-                      Jamaat: <span className="font-bold text-primary">{formatTime(j.jamaat_time)}</span>
+                      Jamaat:{" "}
+                      <span className="font-bold text-primary">
+                        {formatTime(j.jamaat_time)}
+                      </span>
                     </p>
                     {j.imam_name && (
                       <p>
-                        Imam: <span className="font-medium text-foreground">{j.imam_name}</span>
+                        Imam:{" "}
+                        <span className="font-medium text-foreground">
+                          {j.imam_name}
+                        </span>
                       </p>
                     )}
                   </div>
@@ -130,13 +154,14 @@ export default async function PrayerTimesPage() {
         </section>
       )}
 
-      {/* RECENT WEEK */}
-      {recentDates.length > 0 && (
+      {/* UPCOMING WEEK */}
+      {upcomingDates.length > 0 && (
         <section className="py-16 bg-background">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <SectionHeading
-              eyebrow="This Week"
-              title="Recent Schedule"
+              eyebrow="Upcoming"
+              title="Upcoming Schedule"
+              description="Jamaat times for today and the next six days."
             />
 
             {/* Desktop Table */}
@@ -145,17 +170,30 @@ export default async function PrayerTimesPage() {
                 <thead>
                   <tr className="bg-[#064E3B] text-white">
                     <th className="px-4 py-3 text-left font-semibold">Date</th>
-                    <th className="px-4 py-3 text-center font-semibold">Fajr</th>
-                    <th className="px-4 py-3 text-center font-semibold">Sunrise</th>
-                    <th className="px-4 py-3 text-center font-semibold">Dhuhr</th>
+                    <th className="px-4 py-3 text-center font-semibold">
+                      Fajr
+                    </th>
+                    <th className="px-4 py-3 text-center font-semibold">
+                      Sunrise
+                    </th>
+                    <th className="px-4 py-3 text-center font-semibold">
+                      Dhuhr
+                    </th>
                     <th className="px-4 py-3 text-center font-semibold">Asr</th>
-                    <th className="px-4 py-3 text-center font-semibold">Maghrib</th>
-                    <th className="px-4 py-3 text-center font-semibold">Isha</th>
+                    <th className="px-4 py-3 text-center font-semibold">
+                      Maghrib
+                    </th>
+                    <th className="px-4 py-3 text-center font-semibold">
+                      Isha
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {recentDates.map((pt) => (
-                    <tr key={pt.id} className="hover:bg-muted/50 transition-colors">
+                  {upcomingDates.map((pt) => (
+                    <tr
+                      key={pt.id}
+                      className="hover:bg-muted/50 transition-colors"
+                    >
                       <td className="px-4 py-3 font-medium text-foreground">
                         {formatDate(pt.date, "EEE, MMM d")}
                       </td>
@@ -185,7 +223,7 @@ export default async function PrayerTimesPage() {
 
             {/* Mobile Cards */}
             <div className="mx-auto mt-8 grid gap-4 md:hidden">
-              {recentDates.map((pt) => (
+              {upcomingDates.map((pt) => (
                 <div
                   key={pt.id}
                   className="rounded-2xl border border-border bg-card p-4 shadow-sm"
@@ -202,7 +240,10 @@ export default async function PrayerTimesPage() {
                       { label: "Maghrib", jamaat: pt.maghrib_jamaat },
                       { label: "Isha", jamaat: pt.isha_jamaat },
                     ].map((p) => (
-                      <div key={p.label} className="flex justify-between rounded-lg bg-muted/50 px-3 py-2">
+                      <div
+                        key={p.label}
+                        className="flex justify-between rounded-lg bg-muted/50 px-3 py-2"
+                      >
                         <span className="text-muted-foreground">{p.label}</span>
                         <span className="font-medium text-foreground">
                           {formatTime(p.jamaat)}

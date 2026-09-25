@@ -31,7 +31,7 @@ export default async function HomePage() {
   const settings = await getMosqueSettings();
   const timezone = settings?.timezone || MOSQUE_TIMEZONE;
   const prayerTime = await getTodayPrayerTimes(undefined, timezone);
-  const jummah = await getLatestJummah();
+  const jummah = await getLatestJummah(timezone);
   const announcements = await getPublishedAnnouncements(3);
   const events = await getUpcomingEvents(3);
   const khutbahs = await getLatestKhutbahs(3);

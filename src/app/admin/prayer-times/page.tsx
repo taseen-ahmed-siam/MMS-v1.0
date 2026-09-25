@@ -1,5 +1,11 @@
 import { Metadata } from "next";
-import { getTodayPrayerTimes, getRecentPrayerDates } from "@/lib/queries/public";
+import {
+  getMosqueSettings,
+  getRecentPrayerDates,
+  getTodayPrayerTimes,
+  getUpcomingPrayerDates,
+} from "@/lib/queries/public";
+import { MOSQUE_TIMEZONE, localDateInTimeZone } from "@/lib/prayer-times";
 import { PrayerTimesClient } from "@/components/admin/prayer-times-client";
 
 export const metadata: Metadata = {
@@ -7,10 +13,18 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminPrayerTimesPage() {
-  const [data, today] = await Promise.all([
-    getRecentPrayerDates(7),
-    getTodayPrayerTimes(),
+  const settings = await getMosqueSettings();
+  const timezone = settings?.timezone || MOSQUE_TIMEZONE;
+  const [upcoming, recent] = await Promise.all([
+    getUpcomingPrayerDates(7, timezone),
+    getRecentPrayerDates(7, timezone),
   ]);
+  const todayDate = localDateInTimeZone(new Date(), timezone);
+  const today =
+    upcoming.find((prayerTime) => prayerTime.date === todayDate) ??
+    (await getTodayPrayerTimes(todayDate, timezone));
 
-  return <PrayerTimesClient data={data} today={today} />;
+  return (
+    <PrayerTimesClient upcoming={upcoming} recent={recent} today={today} />
+  );
 }

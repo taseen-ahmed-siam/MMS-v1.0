@@ -1,5 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
-import { addMinutesToTime, localDate, localDateInTimeZone, syncRealPrayerTimes } from "@/lib/prayer-times";
+import {
+  MOSQUE_TIMEZONE,
+  addMinutesToTime,
+  localDateInTimeZone,
+  syncRealPrayerTimes,
+} from "@/lib/prayer-times";
 import type {
   MosqueSetting,
   PrayerTime,
@@ -21,9 +26,12 @@ export async function getMosqueSettings(): Promise<MosqueSetting | null> {
   return data as MosqueSetting | null;
 }
 
-export async function getTodayPrayerTimes(date?: string, timezone?: string): Promise<PrayerTime | null> {
+export async function getTodayPrayerTimes(
+  date?: string,
+  timezone = MOSQUE_TIMEZONE,
+): Promise<PrayerTime | null> {
   const supabase = await createClient();
-  const targetDate = date || (timezone ? localDateInTimeZone(new Date(), timezone) : localDate(new Date()));
+  const targetDate = date || localDateInTimeZone(new Date(), timezone);
   await syncRealPrayerTimes([targetDate]);
   const { data } = await supabase
     .from("prayer_times")
@@ -33,41 +41,70 @@ export async function getTodayPrayerTimes(date?: string, timezone?: string): Pro
   return data as PrayerTime | null;
 }
 
-export async function getRecentPrayerDates(limit = 7): Promise<PrayerTime[]> {
-  const supabase = await createClient();
-  const today = new Date();
-  const start = new Date(today);
-  start.setDate(start.getDate() - (limit - 1));
+function normalizePrayerDateLimit(limit: number): number {
+  return Number.isFinite(limit) ? Math.max(0, Math.floor(limit)) : 0;
+}
 
-  const dates: string[] = [];
-  for (let i = 0; i < limit; i++) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-    dates.push(localDate(d));
-  }
+function shiftDate(date: string, days: number): string {
+  const shifted = new Date(`${date}T00:00:00.000Z`);
+  shifted.setUTCDate(shifted.getUTCDate() + days);
+  return shifted.toISOString().slice(0, 10);
+}
+
+async function getPrayerTimesInRange(
+  limit: number,
+  startOffset: number,
+  timezone: string,
+): Promise<PrayerTime[]> {
+  const count = normalizePrayerDateLimit(limit);
+  if (count === 0) return [];
+
+  const supabase = await createClient();
+  const today = localDateInTimeZone(new Date(), timezone);
+  const startDate = shiftDate(today, startOffset);
+  const dates = Array.from({ length: count }, (_, index) =>
+    shiftDate(startDate, index),
+  );
+
   await syncRealPrayerTimes(dates);
 
   const { data } = await supabase
     .from("prayer_times")
     .select("*")
-    .gte("date", localDate(start))
-    .lte("date", localDate(today))
+    .in("date", dates)
     .order("date", { ascending: true })
-    .limit(limit);
+    .limit(count);
   return (data as PrayerTime[]) ?? [];
 }
 
-export async function getLatestJummah(): Promise<JummahSchedule[]> {
-  const supabase = await createClient();
-  const today = new Date();
+export async function getRecentPrayerDates(
+  limit = 7,
+  timezone = MOSQUE_TIMEZONE,
+): Promise<PrayerTime[]> {
+  const count = normalizePrayerDateLimit(limit);
+  return getPrayerTimesInRange(count, 1 - count, timezone);
+}
 
-  const fridays: Date[] = [];
+export async function getUpcomingPrayerDates(
+  limit = 7,
+  timezone = MOSQUE_TIMEZONE,
+): Promise<PrayerTime[]> {
+  return getPrayerTimesInRange(limit, 0, timezone);
+}
+
+export async function getLatestJummah(
+  timezone = MOSQUE_TIMEZONE,
+): Promise<JummahSchedule[]> {
+  const supabase = await createClient();
+  const today = localDateInTimeZone(new Date(), timezone);
+
+  const fridayDates: string[] = [];
   for (let i = 0; i < 14; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    if (d.getDay() === 5) fridays.push(d);
+    const date = shiftDate(today, i);
+    if (new Date(`${date}T00:00:00.000Z`).getUTCDay() === 5) {
+      fridayDates.push(date);
+    }
   }
-  const fridayDates = fridays.map(localDate);
   if (fridayDates.length === 0) return [];
 
   await syncRealPrayerTimes(fridayDates);
@@ -77,13 +114,13 @@ export async function getLatestJummah(): Promise<JummahSchedule[]> {
     .select("date, dhuhr_jamaat")
     .in("date", fridayDates);
 
-  const ptByDate = new Map<string, { date: string; dhuhr_jamaat: string | null }>(
-    (ptRows ?? []).map((p) => [p.date, p])
-  );
+  const ptByDate = new Map<
+    string,
+    { date: string; dhuhr_jamaat: string | null }
+  >((ptRows ?? []).map((p) => [p.date, p]));
 
   const derived: JummahSchedule[] = [];
-  for (const d of fridays) {
-    const dateIso = localDate(d);
+  for (const dateIso of fridayDates) {
     const row = ptByDate.get(dateIso);
     if (!row?.dhuhr_jamaat) continue;
     derived.push({
@@ -103,13 +140,15 @@ export async function getLatestJummah(): Promise<JummahSchedule[]> {
   const { data: fallback } = await supabase
     .from("jummah_schedules")
     .select("*")
-    .gte("date", localDate(today))
+    .gte("date", today)
     .order("date", { ascending: true })
     .limit(10);
   return (fallback as JummahSchedule[]) ?? [];
 }
 
-export async function getPublishedAnnouncements(limit = 5): Promise<Announcement[]> {
+export async function getPublishedAnnouncements(
+  limit = 5,
+): Promise<Announcement[]> {
   const supabase = await createClient();
   const now = new Date().toISOString().split("T")[0];
   const { data } = await supabase
@@ -204,7 +243,9 @@ export async function getVisibleFunds(limit = 10): Promise<DonationFund[]> {
   return (data as DonationFund[]) ?? [];
 }
 
-export async function getFundBySlug(slug: string): Promise<DonationFund | null> {
+export async function getFundBySlug(
+  slug: string,
+): Promise<DonationFund | null> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("donation_funds")
@@ -247,17 +288,23 @@ export async function getGalleryImages(): Promise<GalleryImage[]> {
   ]);
 
   const out: GalleryImage[] = [
-    ...((events.data ?? []) as { title: string; featured_image: string }[]).map((e) => ({
-      src: e.featured_image,
-      alt: e.title,
-      category: "Events",
-    })),
-    ...((funds.data ?? []) as { name: string; image_url: string }[]).map((f) => ({
-      src: f.image_url,
-      alt: f.name,
-      category: "Projects",
-    })),
-    ...((khutbahs.data ?? []) as { title: string; thumbnail_url: string }[]).map((k) => ({
+    ...((events.data ?? []) as { title: string; featured_image: string }[]).map(
+      (e) => ({
+        src: e.featured_image,
+        alt: e.title,
+        category: "Events",
+      }),
+    ),
+    ...((funds.data ?? []) as { name: string; image_url: string }[]).map(
+      (f) => ({
+        src: f.image_url,
+        alt: f.name,
+        category: "Projects",
+      }),
+    ),
+    ...(
+      (khutbahs.data ?? []) as { title: string; thumbnail_url: string }[]
+    ).map((k) => ({
       src: k.thumbnail_url,
       alt: k.title,
       category: "Khutbah",

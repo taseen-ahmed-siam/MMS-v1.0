@@ -486,11 +486,37 @@ export async function getAllMembers() {
 
 export async function getFunds() {
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("donation_funds")
-    .select("*")
-    .order("created_at", { ascending: false });
-  return (data as DonationFund[]) ?? [];
+  const [fundsResult, donationsResult] = await Promise.all([
+    supabase
+      .from("donation_funds")
+      .select("*")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("donations")
+      .select("fund_id, amount")
+      .eq("status", "completed")
+      .is("deleted_at", null)
+      .not("fund_id", "is", null),
+  ]);
+
+  const funds = (fundsResult.data as DonationFund[]) ?? [];
+  if (fundsResult.error || donationsResult.error) return funds;
+
+  const collectedByFund = new Map<string, number>();
+  const completedDonations = (donationsResult.data ?? []) as {
+    fund_id: string | null;
+    amount: number | string | null;
+  }[];
+  completedDonations.forEach((donation) => {
+    if (!donation.fund_id) return;
+    const amount = Number(donation.amount) || 0;
+    collectedByFund.set(donation.fund_id, (collectedByFund.get(donation.fund_id) ?? 0) + amount);
+  });
+
+  return funds.map((fund) => ({
+    ...fund,
+    collected_amount: collectedByFund.get(fund.id) ?? 0,
+  }));
 }
 
 export async function getCommittee() {
