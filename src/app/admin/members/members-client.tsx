@@ -182,8 +182,6 @@ export function MembersClient({
     });
   });
 
-  const hasPendingProfiles = data.some((row) => row.source === "profile");
-
   const columns: Column<MemberListItem>[] = [
     { key: "member_id", header: "ID", cell: (row) => (
       row.source === "profile" ? (
@@ -233,12 +231,7 @@ export function MembersClient({
         <Button size="sm" onClick={() => openCreate()}>Add Member</Button>
       </PageHeader>
 
-      {hasPendingProfiles && (
-        <div className="rounded-xl bg-sky-50 text-sky-800 text-sm p-3 border border-sky-200">
-          Member role-এর account যাদের member record নেই, তারা নিচে {"\u201C"}Account{"\u201D"} হিসেবে
-          দেখাচ্ছে। এদের {"\u201C"}Add Details{"\u201D"} দিয়ে পূর্ণ member হিসাবে যোগ করতে পারবেন।
-        </div>
-      )}
+      {/* Removed the blue info box about pending profiles */}
 
       <FilterBar
         search={filters.search}

@@ -49,12 +49,12 @@ function sumRows(rows: RawRow[]): Totals {
   );
 }
 
-function getFundName(value: unknown) {
-  if (Array.isArray(value)) return typeof value[0]?.name === "string" ? value[0].name : "General";
+function getFundName(value: unknown, fallback: string) {
+  if (Array.isArray(value)) return typeof value[0]?.name === "string" ? value[0].name : fallback;
   if (value && typeof value === "object" && "name" in value && typeof value.name === "string") {
     return value.name;
   }
-  return "General";
+  return fallback;
 }
 
 export async function GET(request: NextRequest) {
@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
   const queryFrom = requestedFrom < ytdStart ? requestedFrom : ytdStart;
   const supabase = createAdminClient();
 
-  const [donations, incomes, expenses] = await Promise.all([
+  const [donations, incomes, expenses, generalFund] = await Promise.all([
     supabase
       .from("donations")
       .select("id, donation_date, donor_name, amount, fund_id, notes, donation_funds(name)")
@@ -101,13 +101,24 @@ export async function GET(request: NextRequest) {
       .lte("date", requestedTo)
       .neq("status", "rejected")
       .is("deleted_at", null),
+    supabase
+      .from("donation_funds")
+      .select("id, name")
+      .eq("slug", "general-fund")
+      .limit(1)
+      .maybeSingle(),
   ]);
 
-  const queryError = donations.error || incomes.error || expenses.error;
+  const queryError = donations.error || incomes.error || expenses.error || generalFund.error;
   if (queryError) {
     console.error("Financial report query failed", queryError);
     return NextResponse.json({ error: "Financial data could not be loaded." }, { status: 500 });
   }
+
+  // Incomes and expenses carry no fund column, so they are attributed to the
+  // General Fund. Without this they would drop out of every fund-filtered report.
+  const generalFundId = generalFund.data?.id ?? null;
+  const generalFundName = generalFund.data?.name ?? "General Fund";
 
   const allRows: RawRow[] = [
     ...(donations.data || []).map((row) => {
@@ -115,38 +126,38 @@ export async function GET(request: NextRequest) {
         id: `donation-${row.id}`,
         date: row.donation_date,
         description: row.notes || `Donation from ${row.donor_name || "anonymous donor"}`,
-        fundType: getFundName(row.donation_funds),
+        fundType: getFundName(row.donation_funds, generalFundName),
         incomeAmount: Number(row.amount) || 0,
         expenseAmount: 0,
         netBalance: Number(row.amount) || 0,
         isException: false,
         exceptionReason: null,
-        fundId: row.fund_id,
+        fundId: row.fund_id ?? generalFundId,
       };
     }),
     ...(incomes.data || []).map((row) => ({
       id: `income-${row.id}`,
       date: row.date,
       description: row.description || row.source || row.income_category,
-      fundType: "General",
+      fundType: generalFundName,
       incomeAmount: Number(row.amount) || 0,
       expenseAmount: 0,
       netBalance: Number(row.amount) || 0,
       isException: false,
       exceptionReason: null,
-      fundId: null,
+      fundId: generalFundId,
     })),
     ...(expenses.data || []).map((row) => ({
       id: `expense-${row.id}`,
       date: row.date,
       description: row.description || row.vendor || row.expense_category,
-      fundType: "General",
+      fundType: generalFundName,
       incomeAmount: 0,
       expenseAmount: Number(row.amount) || 0,
       netBalance: -((Number(row.amount) || 0)),
       isException: row.status === "pending" || row.status === "draft",
       exceptionReason: row.status === "pending" ? "Pending" : row.status === "draft" ? "Draft" : null,
-      fundId: null,
+      fundId: generalFundId,
     })),
   ];
 
