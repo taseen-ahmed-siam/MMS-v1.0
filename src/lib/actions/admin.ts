@@ -507,6 +507,7 @@ export async function createFund(
   if (error) return { error: error.message };
 
   revalidatePath("/admin/funds");
+  revalidatePath("/");
   return { success: true, id: data?.id };
 }
 
@@ -533,6 +534,7 @@ export async function updateFund(
   if (error) return { error: error.message };
 
   revalidatePath("/admin/funds");
+  revalidatePath("/");
   return { success: true, id };
 }
 
@@ -543,6 +545,7 @@ export async function deleteFund(formData: FormData) {
   if (error) return { error: error.message };
 
   revalidatePath("/admin/funds");
+  revalidatePath("/");
   return { success: true };
 }
 

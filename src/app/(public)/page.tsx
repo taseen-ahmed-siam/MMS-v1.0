@@ -9,8 +9,7 @@ import { PrayerCard } from "@/components/public/prayer-card";
 import { NextPrayerCountdown } from "@/components/public/next-prayer-countdown";
 import type { PrayerSlot } from "@/components/public/next-prayer-countdown";
 import { OrnamentalDivider } from "@/components/public/islamic";
-import { formatTime, getHijriDate, formatDate } from "@/lib/utils/format";
-import { CURRENCY_SYMBOL } from "@/constants";
+import { formatTime, getHijriDate, formatDate, formatCurrency } from "@/lib/utils/format";
 
 function getMapEmbedUrl(mapUrl: string | null | undefined, address: string) {
   const coordinateMatch = mapUrl?.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
@@ -243,7 +242,10 @@ export default async function HomePage() {
             />
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
               {funds.map((f) => {
-                const pct = f.target_amount > 0 ? Math.min(100, (f.collected_amount / f.target_amount) * 100) : 0;
+                const target = Number(f.target_amount) || 0;
+                const collected = Number(f.collected_amount) || 0;
+                const goalReached = target > 0 && collected >= target;
+                const pct = target > 0 ? Math.min(100, (collected / target) * 100) : 0;
                 return (
                   <Link key={f.id} href="/donate" className="bg-background rounded-2xl p-6 shadow-sm border hover:shadow-md transition-shadow">
                     <div className="flex items-center gap-3 mb-4">
@@ -256,8 +258,14 @@ export default async function HomePage() {
                       <div className="h-full bg-accent rounded-full" style={{ width: `${pct}%` }} />
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-primary font-medium">{CURRENCY_SYMBOL}{f.collected_amount.toLocaleString()}</span>
-                      <span className="text-muted-foreground">of {CURRENCY_SYMBOL}{f.target_amount.toLocaleString()}</span>
+                      <span className="text-primary font-medium">{formatCurrency(collected)}</span>
+                      {target > 0 ? (
+                        <span className="text-muted-foreground">
+                          {goalReached ? "Goal reached" : `of ${formatCurrency(target)}`}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">No goal set</span>
+                      )}
                     </div>
                   </Link>
                 );

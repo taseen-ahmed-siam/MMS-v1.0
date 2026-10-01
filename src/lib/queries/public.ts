@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   MOSQUE_TIMEZONE,
   addMinutesToTime,
@@ -231,6 +232,40 @@ export async function getCurrentCommittee(): Promise<CommitteeMember[]> {
   return (data as CommitteeMember[]) ?? [];
 }
 
+async function withComputedCollectedAmounts(
+  funds: DonationFund[],
+): Promise<DonationFund[]> {
+  if (funds.length === 0) return funds;
+
+  // `donations` is admin-read-only under RLS, so the aggregate has to run with
+  // the service role key. Only fund_id + amount are read here, never donor data.
+  const admin = createAdminClient();
+  const { data: donations } = await admin
+    .from("donations")
+    .select("fund_id, amount")
+    .eq("status", "completed")
+    .is("deleted_at", null)
+    .not("fund_id", "is", null);
+
+  const collectedByFund = new Map<string, number>();
+  (
+    (donations ?? []) as { fund_id: string | null; amount: number | string | null }[]
+  ).forEach((donation) => {
+    if (!donation.fund_id) return;
+    const amount = Number(donation.amount) || 0;
+    collectedByFund.set(
+      donation.fund_id,
+      (collectedByFund.get(donation.fund_id) ?? 0) + amount,
+    );
+  });
+
+  return funds.map((fund) => ({
+    ...fund,
+    target_amount: Number(fund.target_amount) || 0,
+    collected_amount: collectedByFund.get(fund.id) ?? 0,
+  }));
+}
+
 export async function getVisibleFunds(limit = 10): Promise<DonationFund[]> {
   const supabase = await createClient();
   const { data } = await supabase
@@ -240,7 +275,8 @@ export async function getVisibleFunds(limit = 10): Promise<DonationFund[]> {
     .eq("status", "active")
     .order("featured", { ascending: false })
     .limit(limit);
-  return (data as DonationFund[]) ?? [];
+
+  return withComputedCollectedAmounts((data as DonationFund[]) ?? []);
 }
 
 export async function getFundBySlug(
@@ -253,7 +289,12 @@ export async function getFundBySlug(
     .eq("slug", slug)
     .eq("is_visible", true)
     .maybeSingle();
-  return data as DonationFund | null;
+
+  const fund = data as DonationFund | null;
+  if (!fund) return null;
+
+  const [withAmounts] = await withComputedCollectedAmounts([fund]);
+  return withAmounts;
 }
 
 export interface GalleryImage {
