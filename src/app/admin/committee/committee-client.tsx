@@ -19,6 +19,16 @@ import type { CommitteeMember } from "@/types/database";
 import { DataTable, type Column } from "@/components/admin/data-table";
 import { FilterBar } from "@/components/admin/filter-bar";
 import { FormDialog } from "@/components/admin/form-dialog";
+import {
+  DesktopTableOnly,
+  MobileActionButton,
+  MobileMetaGrid,
+  MobileMetaTile,
+  MobileRecordCard,
+  MobileRecordFooter,
+  MobileRecordHead,
+  MobileRecordList,
+} from "@/components/admin/mobile-record-card";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { AdminTableWrapper } from "@/components/admin/table-wrapper";
 import { PageHeader } from "@/components/forms/page-header";
@@ -213,7 +223,40 @@ export function CommitteeClient({ data }: CommitteeClientProps) {
       />
 
       <AdminTableWrapper empty={filtered.length === 0} emptyTitle="No committee members">
-        <DataTable columns={columns} data={filtered} />
+        <MobileRecordList
+          items={filtered}
+          getKey={(row) => row.id}
+          renderCard={(row) => (
+            <MobileRecordCard>
+              <MobileRecordHead
+                title={row.name}
+                subtitle={row.designation}
+                trailing={
+                  <StatusBadge
+                    status={String(row.is_current)}
+                    statuses={isCurrentStatuses}
+                  />
+                }
+              />
+              <MobileMetaGrid>
+                <MobileMetaTile label="Period" value={row.committee_period || "—"} />
+                <MobileMetaTile label="Order" value={row.display_order} />
+              </MobileMetaGrid>
+              <MobileRecordFooter meta={row.phone ? row.phone : undefined}>
+                <MobileActionButton label="Edit" onClick={() => openEdit(row)}>
+                  <Pencil className="h-4 w-4" />
+                </MobileActionButton>
+                <MobileActionButton label="Delete" destructive onClick={() => setDeleteId(row.id)}>
+                  <Trash2 className="h-4 w-4" />
+                </MobileActionButton>
+              </MobileRecordFooter>
+            </MobileRecordCard>
+          )}
+        />
+
+        <DesktopTableOnly>
+          <DataTable columns={columns} data={filtered} />
+        </DesktopTableOnly>
       </AdminTableWrapper>
 
       <FormDialog

@@ -15,6 +15,16 @@ import type { Khutbah } from "@/types/database";
 import { DataTable, type Column } from "@/components/admin/data-table";
 import { FilterBar } from "@/components/admin/filter-bar";
 import { PaginationBar } from "@/components/admin/pagination-bar";
+import {
+  DesktopTableOnly,
+  MobileActionButton,
+  MobileMetaGrid,
+  MobileMetaTile,
+  MobileRecordCard,
+  MobileRecordFooter,
+  MobileRecordHead,
+  MobileRecordList,
+} from "@/components/admin/mobile-record-card";
 import { FormDialog } from "@/components/admin/form-dialog";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { AdminTableWrapper } from "@/components/admin/table-wrapper";
@@ -207,7 +217,41 @@ export function KhutbahClient({ data, total, page, totalPages, filters }: Khutba
       />
 
       <AdminTableWrapper empty={data.length === 0} emptyTitle="No khutbahs" emptyDescription="No khutbah records found.">
-        <DataTable columns={columns} data={data} />
+        <MobileRecordList
+          items={data}
+          getKey={(row) => row.id}
+          renderCard={(row) => (
+            <MobileRecordCard>
+              <MobileRecordHead
+                title={row.title}
+                subtitle={row.speaker || row.description || undefined}
+                trailing={<StatusBadge status={row.status} statuses={[...KHUTBAH_STATUSES]} />}
+              />
+              <MobileMetaGrid>
+                <MobileMetaTile label="Speaker" value={row.speaker || "—"} />
+                <MobileMetaTile label="Date" value={formatDate(row.date)} />
+              </MobileMetaGrid>
+              <MobileRecordFooter
+                meta={
+                  row.description && row.speaker ? (
+                    <span className="truncate">{row.description}</span>
+                  ) : undefined
+                }
+              >
+                <MobileActionButton label="Edit" onClick={() => openEdit(row)}>
+                  <Pencil className="h-4 w-4" />
+                </MobileActionButton>
+                <MobileActionButton label="Delete" destructive onClick={() => setDeleteId(row.id)}>
+                  <Trash2 className="h-4 w-4" />
+                </MobileActionButton>
+              </MobileRecordFooter>
+            </MobileRecordCard>
+          )}
+        />
+
+        <DesktopTableOnly>
+          <DataTable columns={columns} data={data} />
+        </DesktopTableOnly>
       </AdminTableWrapper>
 
       <PaginationBar page={page} totalPages={totalPages} total={total} onPageChange={handlePageChange} />

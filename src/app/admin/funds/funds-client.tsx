@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { Pencil, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Pencil, Trash2 } from "lucide-react";
 import { z } from "zod";
 
 import type { DonationFund } from "@/types/database";
@@ -208,7 +208,95 @@ export function FundsClient({ funds }: FundsClientProps) {
             ]}
           />
         </div>
-        <DataTable data={filtered} columns={columns} />
+        <div className="divide-y md:hidden">
+          {filtered.map((f) => {
+            const target = Number(f.target_amount) || 0;
+            const collected = Number(f.collected_amount) || 0;
+            const pct = target > 0 ? Math.min(100, Math.round((collected / target) * 100)) : 0;
+            return (
+              <article key={f.id} className="px-4 py-3.5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-foreground">{f.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{f.slug}</p>
+                  </div>
+                  <StatusBadge status={f.status} statuses={[...FUND_STATUSES]} />
+                </div>
+
+                <div className="mt-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Progress</span>
+                    <span className="font-bold tabular-nums text-[#064E3B]">{pct}%</span>
+                  </div>
+                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-black/[0.06]">
+                    <div
+                      className="h-full rounded-full bg-[#064E3B] transition-[width] duration-300"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-2.5 grid grid-cols-2 gap-2">
+                  <div className="rounded-lg bg-[#064E3B]/[0.04] px-2.5 py-2">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
+                      Collected
+                    </p>
+                    <p className="mt-0.5 text-sm font-bold tabular-nums text-[#064E3B]">
+                      {formatCurrency(collected)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-black/[0.03] px-2.5 py-2">
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
+                      Target
+                    </p>
+                    <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
+                      {formatCurrency(target)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-black/5 pt-2.5">
+                  <span className="inline-flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                    {f.is_visible ? (
+                      <Eye className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                    ) : (
+                      <EyeOff className="h-3.5 w-3.5 shrink-0" />
+                    )}
+                    <span className="truncate">
+                      {f.is_visible ? "Visible on public site" : "Hidden from public site"}
+                    </span>
+                  </span>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEdit(f);
+                      }}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      aria-label="Edit"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleting(f);
+                      }}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      aria-label="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        <div className="hidden md:block">
+          <DataTable data={filtered} columns={columns} />
+        </div>
       </AdminTableWrapper>
 
       <FundFormDialog open={dialogOpen} onOpenChange={setDialogOpen} editing={editing} />

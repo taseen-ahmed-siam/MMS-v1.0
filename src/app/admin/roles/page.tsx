@@ -1,6 +1,6 @@
 ﻿import { requireSuperAdmin } from "@/lib/access";
 import { Metadata } from "next";
-import { getRoles, getAllPermissions, getRolePermissions } from "@/lib/queries/admin";
+import { getRoles, getAllPermissions, getRolePermissions, getRoleUserCounts } from "@/lib/queries/admin";
 import { createClient } from "@/lib/supabase/server";
 import { RolesClient } from "./roles-client";
 
@@ -13,7 +13,11 @@ export const dynamic = "force-dynamic";
 export default async function RolesPage() {
   await requireSuperAdmin();
 
-  const [roles, permissions] = await Promise.all([getRoles(), getAllPermissions()]);
+  const [roles, permissions, roleUserCounts] = await Promise.all([
+    getRoles(),
+    getAllPermissions(),
+    getRoleUserCounts(),
+  ]);
 
   const rolePermissions: Record<string, string[]> = {};
   await Promise.all(
@@ -41,6 +45,7 @@ export default async function RolesPage() {
       roles={roles}
       permissions={permissions}
       rolePermissions={rolePermissions}
+      roleUserCounts={roleUserCounts}
       currentRole={currentRole}
     />
   );

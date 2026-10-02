@@ -26,6 +26,7 @@ export interface Permission {
   name: string;
   module: string;
   action: string;
+  description?: string | null;
   created_at: string;
 }
 

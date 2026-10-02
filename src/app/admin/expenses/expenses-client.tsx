@@ -21,6 +21,16 @@ import { expenseSchema } from "@/lib/validations";
 import { EXPENSE_STATUSES, EXPENSE_CATEGORIES, PAYMENT_METHODS } from "@/constants";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { DataTable } from "@/components/admin/data-table";
+import {
+  DesktopTableOnly,
+  MobileActionButton,
+  MobileMetaGrid,
+  MobileMetaTile,
+  MobileRecordCard,
+  MobileRecordFooter,
+  MobileRecordHead,
+  MobileRecordList,
+} from "@/components/admin/mobile-record-card";
 import { PaginationBar } from "@/components/admin/pagination-bar";
 import { FilterBar } from "@/components/admin/filter-bar";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -286,7 +296,51 @@ export function ExpensesClient({
             ]}
           />
         </div>
-        <DataTable data={expenses} columns={columns} />
+        <MobileRecordList
+          items={expenses}
+          getKey={(e) => e.id}
+          renderCard={(e) => (
+            <MobileRecordCard>
+              <MobileRecordHead
+                title={e.expense_category || "—"}
+                subtitle={
+                  e.voucher_number
+                    ? `Voucher ${e.voucher_number}`
+                    : e.vendor
+                      ? e.vendor
+                      : undefined
+                }
+                trailing={<StatusBadge status={e.status} statuses={[...EXPENSE_STATUSES]} />}
+              />
+              <MobileMetaGrid columns={3}>
+                <MobileMetaTile
+                  label="Amount"
+                  tone="rose"
+                  value={formatCurrency(Number(e.amount) || 0)}
+                />
+                <MobileMetaTile
+                  label="Method"
+                  value={e.payment_method?.replace(/_/g, " ") || "—"}
+                />
+                <MobileMetaTile label="Date" value={e.date ? formatDate(e.date) : "—"} />
+              </MobileMetaGrid>
+              <MobileRecordFooter
+                meta={e.vendor && e.voucher_number ? <span className="truncate">{e.vendor}</span> : undefined}
+              >
+                <MobileActionButton label="Edit" onClick={() => openEdit(e)}>
+                  <Pencil className="h-4 w-4" />
+                </MobileActionButton>
+                <MobileActionButton label="Delete" destructive onClick={() => setDeleting(e)}>
+                  <Trash2 className="h-4 w-4" />
+                </MobileActionButton>
+              </MobileRecordFooter>
+            </MobileRecordCard>
+          )}
+        />
+
+        <DesktopTableOnly>
+          <DataTable data={expenses} columns={columns} />
+        </DesktopTableOnly>
         <div className="px-4 pb-4">
           <PaginationBar
             page={page}

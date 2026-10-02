@@ -861,6 +861,22 @@ export async function getRolePermissions(roleId: string) {
   return (data || []).map((rp) => rp.permission_id);
 }
 
+/**
+ * How many active profiles sit in each role. Shown next to every role so the
+ * admin can see who a permission change is about to affect.
+ */
+export async function getRoleUserCounts(): Promise<Record<string, number>> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("profiles").select("role, status");
+  const counts: Record<string, number> = {};
+  (data ?? []).forEach((p) => {
+    const role = (p as { role?: string | null }).role;
+    if (!role) return;
+    counts[role] = (counts[role] ?? 0) + 1;
+  });
+  return counts;
+}
+
 export async function getZakatCollections() {
   const supabase = await createClient();
   const { data } = await supabase

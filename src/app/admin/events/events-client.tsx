@@ -13,6 +13,16 @@ import { EVENT_TYPES, EVENT_STATUSES } from "@/constants";
 import { formatDate } from "@/lib/utils/format";
 import type { Event } from "@/types/database";
 import { DataTable, type Column } from "@/components/admin/data-table";
+import {
+  DesktopTableOnly,
+  MobileActionButton,
+  MobileMetaGrid,
+  MobileMetaTile,
+  MobileRecordCard,
+  MobileRecordFooter,
+  MobileRecordHead,
+  MobileRecordList,
+} from "@/components/admin/mobile-record-card";
 import { FilterBar } from "@/components/admin/filter-bar";
 import { PaginationBar } from "@/components/admin/pagination-bar";
 import { FormDialog } from "@/components/admin/form-dialog";
@@ -232,7 +242,36 @@ export function EventsClient({ data, total, page, totalPages, filters }: EventsC
       />
 
       <AdminTableWrapper empty={data.length === 0} emptyTitle="No events" emptyDescription="No events found.">
-        <DataTable columns={columns} data={data} />
+        <MobileRecordList
+          items={data}
+          getKey={(row) => row.id}
+          renderCard={(row) => (
+            <MobileRecordCard>
+              <MobileRecordHead
+                title={row.title}
+                subtitle={row.event_type}
+                trailing={<StatusBadge status={row.status} statuses={[...EVENT_STATUSES]} />}
+              />
+              <MobileMetaGrid columns={3}>
+                <MobileMetaTile label="Date" value={row.start_date ? formatDate(row.start_date) : "—"} />
+                <MobileMetaTile label="Time" value={row.start_time || "—"} />
+                <MobileMetaTile label="Venue" value={row.venue || "—"} />
+              </MobileMetaGrid>
+              <MobileRecordFooter>
+                <MobileActionButton label="Edit" onClick={() => openEdit(row)}>
+                  <Pencil className="h-4 w-4" />
+                </MobileActionButton>
+                <MobileActionButton label="Delete" destructive onClick={() => setDeleteId(row.id)}>
+                  <Trash2 className="h-4 w-4" />
+                </MobileActionButton>
+              </MobileRecordFooter>
+            </MobileRecordCard>
+          )}
+        />
+
+        <DesktopTableOnly>
+          <DataTable columns={columns} data={data} />
+        </DesktopTableOnly>
       </AdminTableWrapper>
 
       <PaginationBar page={page} totalPages={totalPages} total={total} onPageChange={handlePageChange} />

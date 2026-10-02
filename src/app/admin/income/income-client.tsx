@@ -15,6 +15,16 @@ import { incomeSchema } from "@/lib/validations";
 import { INCOME_CATEGORIES, PAYMENT_METHODS } from "@/constants";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { DataTable } from "@/components/admin/data-table";
+import {
+  DesktopTableOnly,
+  MobileActionButton,
+  MobileMetaGrid,
+  MobileMetaTile,
+  MobileRecordCard,
+  MobileRecordFooter,
+  MobileRecordHead,
+  MobileRecordList,
+} from "@/components/admin/mobile-record-card";
 import { PaginationBar } from "@/components/admin/pagination-bar";
 import { FilterBar } from "@/components/admin/filter-bar";
 import { PageActions } from "@/components/admin/page-actions";
@@ -202,7 +212,44 @@ export function IncomeClient({
             ]}
           />
         </div>
-        <DataTable data={incomes} columns={columns} />
+        <MobileRecordList
+          items={incomes}
+          getKey={(i) => i.id}
+          renderCard={(i) => (
+            <MobileRecordCard>
+              <MobileRecordHead
+                title={i.source || "-"}
+                subtitle={
+                  i.reference_number
+                    ? `Ref ${i.reference_number}`
+                    : i.income_category
+                      ? i.income_category.replace(/_/g, " ")
+                      : undefined
+                }
+              />
+              <MobileMetaGrid columns={3}>
+                <MobileMetaTile label="Amount" tone="emerald" value={formatCurrency(Number(i.amount) || 0)} />
+                <MobileMetaTile
+                  label="Method"
+                  value={i.payment_method?.replace(/_/g, " ") || "—"}
+                />
+                <MobileMetaTile label="Date" value={i.date ? formatDate(i.date) : "—"} />
+              </MobileMetaGrid>
+              <MobileRecordFooter>
+                <MobileActionButton label="Edit" onClick={() => openEdit(i)}>
+                  <Pencil className="h-4 w-4" />
+                </MobileActionButton>
+                <MobileActionButton label="Delete" destructive onClick={() => setDeleting(i)}>
+                  <Trash2 className="h-4 w-4" />
+                </MobileActionButton>
+              </MobileRecordFooter>
+            </MobileRecordCard>
+          )}
+        />
+
+        <DesktopTableOnly>
+          <DataTable data={incomes} columns={columns} />
+        </DesktopTableOnly>
         <div className="px-4 pb-4">
           <PaginationBar
             page={page}

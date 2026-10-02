@@ -21,6 +21,16 @@ import { donationSchema } from "@/lib/validations";
 import { DONATION_STATUSES, PAYMENT_METHODS } from "@/constants";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { DataTable } from "@/components/admin/data-table";
+import {
+  DesktopTableOnly,
+  MobileActionButton,
+  MobileMetaGrid,
+  MobileMetaTile,
+  MobileRecordCard,
+  MobileRecordFooter,
+  MobileRecordHead,
+  MobileRecordList,
+} from "@/components/admin/mobile-record-card";
 import { PaginationBar } from "@/components/admin/pagination-bar";
 import { FilterBar } from "@/components/admin/filter-bar";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -292,7 +302,52 @@ export function DonationsClient({
             ]}
           />
         </div>
-        <DataTable data={donations} columns={columns} />
+        <MobileRecordList
+          items={donations}
+          getKey={(d) => d.id}
+          renderCard={(d) => (
+            <MobileRecordCard>
+              <MobileRecordHead
+                title={d.is_anonymous ? "Anonymous" : d.donor_name}
+                subtitle={d.receipt_number || d.donor_phone || undefined}
+                trailing={<StatusBadge status={d.status} statuses={[...DONATION_STATUSES]} />}
+              />
+              <MobileMetaGrid columns={3}>
+                <MobileMetaTile
+                  label="Amount"
+                  tone="emerald"
+                  value={formatCurrency(Number(d.amount) || 0)}
+                />
+                <MobileMetaTile
+                  label="Method"
+                  value={d.payment_method?.replace(/_/g, " ") || "—"}
+                />
+                <MobileMetaTile
+                  label="Date"
+                  value={d.donation_date ? formatDate(d.donation_date) : "—"}
+                />
+              </MobileMetaGrid>
+              <MobileRecordFooter
+                meta={
+                  <span className="truncate">
+                    Fund: {d.donation_funds?.name || "General"}
+                  </span>
+                }
+              >
+                <MobileActionButton label="Edit" onClick={() => openEdit(d)}>
+                  <Pencil className="h-4 w-4" />
+                </MobileActionButton>
+                <MobileActionButton label="Delete" destructive onClick={() => setDeleting(d)}>
+                  <Trash2 className="h-4 w-4" />
+                </MobileActionButton>
+              </MobileRecordFooter>
+            </MobileRecordCard>
+          )}
+        />
+
+        <DesktopTableOnly>
+          <DataTable data={donations} columns={columns} />
+        </DesktopTableOnly>
         <div className="px-4 pb-4">
           <PaginationBar
             page={page}
