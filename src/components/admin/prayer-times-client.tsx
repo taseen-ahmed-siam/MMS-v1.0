@@ -255,8 +255,104 @@ function PrayerTimesClient({
     }
 
     return (
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[64rem] text-sm lg:min-w-0">
+      <>
+        <div className="divide-y md:hidden">
+          {rows.map((row) => {
+            const isToday = row.date === todayStr;
+            return (
+              <article
+                key={row.id}
+                className={cn(
+                  "px-4 py-3.5",
+                  isToday && "bg-[#C8A951]/[0.06]",
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    {isToday && (
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-[#C8A951]" />
+                    )}
+                    <div>
+                      <p
+                        className={cn(
+                          "text-sm font-semibold",
+                          isToday ? "text-[#064E3B]" : "text-foreground",
+                        )}
+                      >
+                        {formatDate(row.date, "EEEE")}
+                        <span className="ml-1.5 font-normal text-muted-foreground">
+                          {formatDate(row.date, "MMM d")}
+                        </span>
+                      </p>
+                      {isToday && (
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-[#C8A951]">
+                          Today
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEdit(row);
+                      }}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      title="Edit"
+                    >
+                      <FontAwesomeIcon icon={faPen} className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteTarget(row);
+                      }}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      title="Delete"
+                    >
+                      <FontAwesomeIcon
+                        icon={faTrash}
+                        className="h-3.5 w-3.5"
+                      />
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-2.5 divide-y divide-black/[0.05] overflow-hidden rounded-xl border border-[#064E3B]/10 bg-[#064E3B]/[0.02]">
+                  {PRAYER_COLS.map((prayer) => {
+                    const adhan = row[prayer.adhanKey] as string;
+                    const jamaat = row[prayer.jamaatKey] as string;
+                    return (
+                      <div
+                        key={prayer.key}
+                        className="flex items-center gap-3 px-3 py-2"
+                      >
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[#C8A951]/10 text-[10px] text-[#C8A951]">
+                          <FontAwesomeIcon icon={prayer.icon} />
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          {prayer.name}
+                        </span>
+                        <span className="shrink-0 text-right">
+                          <span className="block text-sm font-bold tabular-nums text-[#064E3B]">
+                            {formatTime(jamaat)}
+                          </span>
+                          {adhan && adhan !== jamaat && (
+                            <span className="block text-[10px] tabular-nums text-muted-foreground/70">
+                              {formatTime(adhan)}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        <div className="hidden overflow-x-auto md:block">
+          <table className="w-full min-w-[64rem] text-sm lg:min-w-0">
           <thead>
             <tr className="bg-[#064E3B] text-white">
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider">
@@ -351,8 +447,9 @@ function PrayerTimesClient({
               );
             })}
           </tbody>
-        </table>
-      </div>
+          </table>
+        </div>
+      </>
     );
   }
 
@@ -385,7 +482,65 @@ function PrayerTimesClient({
               {formatDate(today.date, "EEEE, MMMM d, yyyy")}
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="divide-y divide-black/[0.05] overflow-hidden rounded-2xl border border-[#064E3B]/10 bg-[#064E3B]/[0.02] md:hidden">
+            {PRAYERS.map((prayer, i) => {
+              const isCurrent = i === currentIdx;
+              const jamaatTime = today[prayer.jamaatKey] as string;
+              const adhanTime = today[prayer.adhanKey] as string;
+              const isSunrise = prayer.key === "sunrise";
+
+              return (
+                <div
+                  key={prayer.key}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3",
+                    isCurrent && "bg-[#064E3B]/[0.05]",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-xs ring-1 ring-inset ring-black/5",
+                      isCurrent
+                        ? "bg-[#064E3B] text-white"
+                        : "bg-[#C8A951]/10 text-[#C8A951]",
+                    )}
+                  >
+                    <FontAwesomeIcon icon={prayer.icon} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      {prayer.name}
+                      {isCurrent && (
+                        <span className="rounded-full bg-[#064E3B] px-1.5 py-px text-[9px] tracking-normal text-white">
+                          Now
+                        </span>
+                      )}
+                    </p>
+                    {!isSunrise && adhanTime && (
+                      <p className="mt-0.5 text-[11px] tabular-nums text-muted-foreground/70">
+                        Adhan {formatTime(adhanTime)}
+                      </p>
+                    )}
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground/60">
+                      Jamaat
+                    </p>
+                    <p
+                      className={cn(
+                        "text-base font-bold tabular-nums",
+                        isCurrent ? "text-[#064E3B]" : "text-foreground",
+                      )}
+                    >
+                      {formatTime(jamaatTime)}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="hidden gap-3 md:grid md:grid-cols-3 lg:grid-cols-6">
             {PRAYERS.map((prayer, i) => {
               const isCurrent = i === currentIdx;
               const jamaatTime = today[prayer.jamaatKey] as string;

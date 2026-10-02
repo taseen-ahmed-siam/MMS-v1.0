@@ -229,7 +229,59 @@ export function UsersClient({ data, currentRole }: UsersClientProps) {
       />
 
       <AdminTableWrapper empty={filtered.length === 0} emptyTitle="No users">
-        <DataTable columns={columns} data={filtered} />
+        <div className="divide-y md:hidden">
+          {filtered.map((user) => (
+            <article key={user.id} className="px-4 py-3.5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{user.full_name}</p>
+                  <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                </div>
+                <StatusBadge status={user.status} statuses={userStatuses} />
+              </div>
+              <div className="mt-2.5 flex items-center gap-2 text-xs">
+                <span className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 font-medium capitalize text-slate-700">
+                  <Shield className="h-3 w-3" />
+                  {user.role?.replace("_", " ") ?? "—"}
+                </span>
+                <span className="rounded-md bg-slate-50 px-2 py-1 text-muted-foreground">
+                  Joined {formatDate(user.created_at)}
+                </span>
+              </div>
+              {canManage && (
+                <div className="mt-3 flex items-center gap-2 border-t border-black/5 pt-3">
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => openRoleDialog(user)}>
+                    <Shield className="h-3.5 w-3.5" />
+                    Change Role
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handleToggleStatus(user)}
+                    disabled={isToggling}
+                  >
+                    {user.status === "active" ? (
+                      <>
+                        <UserX className="h-3.5 w-3.5 text-destructive" />
+                        Deactivate
+                      </>
+                    ) : (
+                      <>
+                        <UserCheck className="h-3.5 w-3.5 text-green-600" />
+                        Activate
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </article>
+          ))}
+        </div>
+
+        <div className="hidden md:block">
+          <DataTable columns={columns} data={filtered} />
+        </div>
       </AdminTableWrapper>
 
       <FormDialog
