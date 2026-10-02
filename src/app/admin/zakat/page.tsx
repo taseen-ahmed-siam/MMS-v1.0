@@ -1,4 +1,4 @@
-﻿import { requireAdminRole } from "@/lib/access";
+﻿import { requirePermission } from "@/lib/access";
 import { Metadata } from "next";
 import {
   getZakatCollections,
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function ZakatPage() {
-  await requireAdminRole();
+  await requirePermission("zakat.view");
 
   const [collections, beneficiaries, distributions] = await Promise.all([
     getZakatCollections(),

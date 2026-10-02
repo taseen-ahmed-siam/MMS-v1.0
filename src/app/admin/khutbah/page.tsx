@@ -1,4 +1,4 @@
-﻿import { requireAdminRole } from "@/lib/access";
+﻿import { requirePermission } from "@/lib/access";
 import { Metadata } from "next";
 import { getAllKhutbahs } from "@/lib/queries/admin";
 import { PAGE_SIZE } from "@/constants";
@@ -15,7 +15,7 @@ export default async function KhutbahPage({
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
-  await requireAdminRole();
+  await requirePermission("khutbah.view");
 
   const params = await searchParams;
   const search = params.search ?? "";

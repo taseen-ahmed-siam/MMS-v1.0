@@ -1,4 +1,4 @@
-﻿import { requireAdminRole } from "@/lib/access";
+﻿import { requirePermission } from "@/lib/access";
 import { Metadata } from "next";
 import { getDocuments } from "@/lib/queries/admin";
 import { PAGE_SIZE } from "@/constants";
@@ -15,7 +15,7 @@ export default async function DocumentsPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  await requireAdminRole();
+  await requirePermission("document.view");
 
   const params = await searchParams;
   const page = Number(params.page) || 1;

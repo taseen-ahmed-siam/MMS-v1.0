@@ -1,4 +1,4 @@
-﻿import { requireAdminRole } from "@/lib/access";
+﻿import { requirePermission } from "@/lib/access";
 import { Metadata } from "next";
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AdminRamadanPage() {
-  await requireAdminRole();
+  await requirePermission("ramadan.view");
 
   return (
     <div className="space-y-6">

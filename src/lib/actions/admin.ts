@@ -440,6 +440,11 @@ export async function createIncome(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("income.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = incomeSchema.safeParse({
     ...raw,
@@ -472,6 +477,11 @@ export async function updateIncome(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("income.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const id = formData.get("id") as string;
   const raw = Object.fromEntries(formData.entries());
   delete raw.id;
@@ -500,6 +510,11 @@ export async function updateIncome(
 }
 
 export async function deleteIncome(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("income.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const id = formData.get("id") as string;
   const supabase = await createClient();
   const { data: old } = await supabase.from("incomes").select("*").eq("id", id).single();
@@ -529,6 +544,11 @@ export async function createFund(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("fund.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = fundSchema.safeParse({
     ...raw,
@@ -555,6 +575,11 @@ export async function updateFund(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("fund.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const id = formData.get("id") as string;
   const raw = Object.fromEntries(formData.entries());
   delete raw.id;
@@ -675,6 +700,11 @@ export async function createCommitteeMember(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("committee.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = committeeMemberSchema.safeParse({
     ...raw,
@@ -699,6 +729,11 @@ export async function updateCommitteeMember(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("committee.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const id = formData.get("id") as string;
   const raw = Object.fromEntries(formData.entries());
   delete raw.id;
@@ -985,6 +1020,11 @@ export async function createKhutbah(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("khutbah.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = khutbahSchema.safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
@@ -1009,6 +1049,11 @@ export async function updateKhutbah(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("khutbah.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const id = formData.get("id") as string;
   const raw = Object.fromEntries(formData.entries());
   delete raw.id;
@@ -1030,6 +1075,11 @@ export async function updateKhutbah(
 }
 
 export async function deleteKhutbah(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("khutbah.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const id = formData.get("id") as string;
   const { error } = await (await createClient()).from("khutbahs").delete().eq("id", id);
   if (error) return { error: error.message };
@@ -1046,6 +1096,11 @@ export async function createAsset(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("asset.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = assetSchema.safeParse({
     ...raw,
@@ -1073,6 +1128,11 @@ export async function updateAsset(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("asset.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const id = formData.get("id") as string;
   const raw = Object.fromEntries(formData.entries());
   delete raw.id;
@@ -1091,6 +1151,11 @@ export async function updateAsset(
 }
 
 export async function deleteAsset(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("asset.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const id = formData.get("id") as string;
   const { error } = await (await createClient()).from("assets").delete().eq("id", id);
   if (error) return { error: error.message };
@@ -1107,6 +1172,11 @@ export async function createMaintenance(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("maintenance.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = maintenanceSchema.safeParse({
     ...raw,
@@ -1135,6 +1205,11 @@ export async function updateMaintenance(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("maintenance.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const id = formData.get("id") as string;
   const raw = Object.fromEntries(formData.entries());
   delete raw.id;
@@ -1157,6 +1232,11 @@ export async function updateMaintenance(
 }
 
 export async function deleteMaintenance(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("maintenance.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const id = formData.get("id") as string;
   const { error } = await (await createClient()).from("maintenance_requests").delete().eq("id", id);
   if (error) return { error: error.message };
@@ -1173,6 +1253,11 @@ export async function createDocument(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("document.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = documentSchema.safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
@@ -1204,7 +1289,7 @@ export async function deleteDocument(formData: FormData) {
 
 export async function updateContactRequestStatus(formData: FormData) {
   const access = await getCurrentAccess();
-  if (!access.has("users.manage")) {
+  if (!access.has("request.manage")) {
     return { error: "You are not allowed to manage contact requests" };
   }
 
@@ -1224,7 +1309,7 @@ export async function updateContactRequestStatus(formData: FormData) {
 
 export async function deleteContactRequest(formData: FormData) {
   const access = await getCurrentAccess();
-  if (!access.has("users.manage")) {
+  if (!access.has("request.manage")) {
     return { error: "You are not allowed to delete contact requests" };
   }
 
@@ -1416,6 +1501,11 @@ export async function createZakatCollection(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("zakat.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = zakatCollectionSchema.safeParse({
     ...raw,
@@ -1438,6 +1528,11 @@ export async function createZakatBeneficiary(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("zakat.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = zakatBeneficiarySchema.safeParse({
     ...raw,
@@ -1460,6 +1555,11 @@ export async function createZakatDistribution(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("zakat.manage")) {
+    return { error: "You do not have permission to perform this action." };
+  }
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = zakatDistributionSchema.safeParse({
     ...raw,

@@ -1,4 +1,4 @@
-﻿import { requireAdminRole } from "@/lib/access";
+﻿import { requirePermission } from "@/lib/access";
 import { Metadata } from "next";
 import {
   getMaintenanceRequests,
@@ -18,7 +18,7 @@ export default async function MaintenancePage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  await requireAdminRole();
+  await requirePermission("maintenance.view");
 
   const params = await searchParams;
   const page = Number(params.page) || 1;

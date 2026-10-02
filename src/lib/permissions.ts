@@ -12,8 +12,7 @@ export function isAdminRole(role: string | null | undefined): boolean {
 
 export type NavVisibility =
   | { kind: "permission"; permission: string; excludedRoles?: string[] }
-  | { kind: "super_admin" }
-  | { kind: "admin" };
+  | { kind: "super_admin" };
 
 export const NAV_PERMISSIONS: Record<string, NavVisibility> = {
   "/admin": { kind: "permission", permission: "dashboard.view" },
@@ -25,22 +24,22 @@ export const NAV_PERMISSIONS: Record<string, NavVisibility> = {
   "/admin/prayer-times": { kind: "permission", permission: "prayer.view" },
   "/admin/announcements": { kind: "permission", permission: "announcement.manage" },
   "/admin/events": { kind: "permission", permission: "event.manage" },
-  "/admin/khutbah": { kind: "admin" },
+  "/admin/khutbah": { kind: "permission", permission: "khutbah.view" },
   "/admin/donations": { kind: "permission", permission: "donation.view" },
-  "/admin/funds": { kind: "admin" },
-  "/admin/income": { kind: "admin" },
+  "/admin/funds": { kind: "permission", permission: "fund.view" },
+  "/admin/income": { kind: "permission", permission: "income.view" },
   "/admin/expenses": { kind: "permission", permission: "expense.view" },
   "/admin/reports": { kind: "permission", permission: "reports.view" },
   "/admin/members": { kind: "permission", permission: "member.view" },
-  "/admin/committee": { kind: "admin" },
+  "/admin/committee": { kind: "permission", permission: "committee.view" },
   "/admin/staff": { kind: "permission", permission: "staff.manage" },
-  "/admin/assets": { kind: "admin" },
-  "/admin/maintenance": { kind: "admin" },
-  "/admin/documents": { kind: "admin" },
-  "/admin/requests": { kind: "admin" },
-  "/admin/ramadan": { kind: "admin" },
-  "/admin/zakat": { kind: "admin" },
-  "/admin/users": { kind: "admin" },
+  "/admin/assets": { kind: "permission", permission: "asset.view" },
+  "/admin/maintenance": { kind: "permission", permission: "maintenance.view" },
+  "/admin/documents": { kind: "permission", permission: "document.view" },
+  "/admin/requests": { kind: "permission", permission: "request.view" },
+  "/admin/ramadan": { kind: "permission", permission: "ramadan.view" },
+  "/admin/zakat": { kind: "permission", permission: "zakat.view" },
+  "/admin/users": { kind: "permission", permission: "users.view" },
   "/admin/roles": { kind: "super_admin" },
   "/admin/audit-logs": { kind: "permission", permission: "audit.view" },
   "/admin/settings": { kind: "permission", permission: "settings.manage" },
@@ -73,7 +72,6 @@ export function navItemAllowed(
     return permissionsAllow(permissions, visibility.permission);
   }
   if (visibility.kind === "super_admin") return role === SUPER_ADMIN;
-  if (visibility.kind === "admin") return role === SUPER_ADMIN || role === ADMIN;
   return false;
 }
 

@@ -46,7 +46,27 @@ INSERT INTO permissions (name, module, action, description) VALUES
   ('reports.view', 'reports', 'view', 'View reports'),
   ('users.manage', 'users', 'manage', 'Manage users'),
   ('settings.manage', 'settings', 'manage', 'Manage settings'),
-  ('audit.view', 'audit', 'view', 'View audit logs')
+  ('audit.view', 'audit', 'view', 'View audit logs'),
+  ('khutbah.view', 'khutbah', 'view', 'View khutbah archive'),
+  ('khutbah.manage', 'khutbah', 'manage', 'Create, edit and delete khutbahs'),
+  ('fund.view', 'fund', 'view', 'View donation funds'),
+  ('fund.manage', 'fund', 'manage', 'Create and edit donation funds'),
+  ('income.view', 'income', 'view', 'View other income records'),
+  ('income.manage', 'income', 'manage', 'Create, edit and delete other income'),
+  ('committee.view', 'committee', 'view', 'View committee members'),
+  ('committee.manage', 'committee', 'manage', 'Create, edit and delete committee members'),
+  ('asset.view', 'asset', 'view', 'View mosque assets'),
+  ('asset.manage', 'asset', 'manage', 'Create, edit and delete mosque assets'),
+  ('maintenance.view', 'maintenance', 'view', 'View maintenance requests'),
+  ('maintenance.manage', 'maintenance', 'manage', 'Create, edit and delete maintenance requests'),
+  ('document.view', 'document', 'view', 'View mosque documents'),
+  ('document.manage', 'document', 'manage', 'Upload and delete mosque documents'),
+  ('request.view', 'request', 'view', 'View contact requests'),
+  ('request.manage', 'request', 'manage', 'Approve and delete contact requests'),
+  ('ramadan.view', 'ramadan', 'view', 'View Ramadan programme'),
+  ('zakat.view', 'zakat', 'view', 'View zakat collections and beneficiaries'),
+  ('zakat.manage', 'zakat', 'manage', 'Create and edit zakat records'),
+  ('users.view', 'users', 'view', 'View the user list')
 ON CONFLICT (name) DO NOTHING;
 
 -- ============================================================
@@ -70,7 +90,18 @@ JOIN permissions p ON p.name IN (
   'expense.view','expense.create','expense.update','expense.approve',
   'member.view','member.create','member.update',
   'event.manage','announcement.manage','staff.manage',
-  'reports.view','settings.manage','audit.view'
+  'reports.view','settings.manage','audit.view',
+  'khutbah.view','khutbah.manage',
+  'fund.view','fund.manage',
+  'income.view','income.manage',
+  'committee.view','committee.manage',
+  'asset.view','asset.manage',
+  'maintenance.view','maintenance.manage',
+  'document.view','document.manage',
+  'request.view','request.manage',
+  'ramadan.view',
+  'zakat.view','zakat.manage',
+  'users.view'
 )
 WHERE r.name = 'admin'
 ON CONFLICT DO NOTHING;

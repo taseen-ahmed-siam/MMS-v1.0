@@ -1,4 +1,4 @@
-﻿import { requireAdminRole } from "@/lib/access";
+﻿import { requirePermission } from "@/lib/access";
 import { Metadata } from "next";
 import { getAllAssets } from "@/lib/queries/admin";
 import { PAGE_SIZE } from "@/constants";
@@ -15,7 +15,7 @@ export default async function AssetsPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  await requireAdminRole();
+  await requirePermission("asset.view");
 
   const params = await searchParams;
   const page = Number(params.page) || 1;

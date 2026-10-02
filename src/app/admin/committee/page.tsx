@@ -1,4 +1,4 @@
-﻿import { requireAdminRole } from "@/lib/access";
+﻿import { requirePermission } from "@/lib/access";
 import { Metadata } from "next";
 import { getCommittee } from "@/lib/queries/admin";
 import { CommitteeClient } from "./committee-client";
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function CommitteePage() {
-  await requireAdminRole();
+  await requirePermission("committee.view");
 
   const data = await getCommittee();
 
