@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/access";
 import { Metadata } from "next";
 import { getAuditLogs } from "@/lib/queries/admin";
 import { PAGE_SIZE } from "@/constants";
@@ -7,11 +8,15 @@ export const metadata: Metadata = {
   title: "Audit Logs",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminAuditLogsPage({
   searchParams,
 }: {
   searchParams: Promise<{ search?: string; module?: string; page?: string }>;
 }) {
+  await requirePermission("audit.view");
+
   const params = await searchParams;
   const search = typeof params.search === "string" ? params.search : "";
   const moduleFilter = typeof params.module === "string" ? params.module : "";

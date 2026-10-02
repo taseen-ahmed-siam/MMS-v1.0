@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/access";
 import { Metadata } from "next";
 
 import { ReportsClient } from "@/components/admin/reports-client";
@@ -8,13 +9,17 @@ export const metadata: Metadata = {
   title: "Financial Reports",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminReportsPage() {
+  await requirePermission("reports.view");
+
   const [funds, settings] = await Promise.all([getFunds(), getMosqueSettings()]);
 
   return (
     <ReportsClient
       funds={funds.map((fund) => ({ id: fund.id, name: fund.name }))}
-      currency={settings?.currency || "৳"}
+      currency={settings?.currency || "à§³"}
     />
   );
 }

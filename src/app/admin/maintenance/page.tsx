@@ -1,3 +1,4 @@
+﻿import { requireAdminRole } from "@/lib/access";
 import { Metadata } from "next";
 import {
   getMaintenanceRequests,
@@ -10,11 +11,15 @@ export const metadata: Metadata = {
   title: "Maintenance",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function MaintenancePage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  await requireAdminRole();
+
   const params = await searchParams;
   const page = Number(params.page) || 1;
   const search = typeof params.search === "string" ? params.search : "";

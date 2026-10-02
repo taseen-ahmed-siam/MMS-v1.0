@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getInitials } from "@/lib/utils/format";
 import { logoutAction } from "@/lib/auth/actions";
-import { roleHasPermission } from "@/lib/permissions";
+import { permissionsAllow } from "@/lib/permissions";
 
 interface AdminHeaderProps {
   user: {
@@ -34,6 +34,7 @@ interface AdminHeaderProps {
     full_name: string;
     role: string;
   };
+  permissions?: string[];
   onToggleSidebar: () => void;
   onToggleMobile: () => void;
 }
@@ -96,15 +97,16 @@ function Breadcrumbs({ pathname }: { pathname: string }) {
 
 export function AdminHeader({
   user,
+  permissions,
   onToggleSidebar,
   onToggleMobile,
 }: AdminHeaderProps) {
   const pathname = usePathname();
   const initials = getInitials(user.full_name);
-  const canManageSettings = roleHasPermission(user.role, "settings.manage");
+  const canManageSettings = permissionsAllow(permissions, "settings.manage");
 
   return (
-    <header className="flex h-16 shrink-0 items-center border-b border-[#C8A951]/30 bg-white px-4 gap-3">
+    <header className="flex h-16 shrink-0 items-center border-b border-[#C8A951]/30 bg-white px-4 gap-3 print:hidden">
       <Button
         variant="ghost"
         size="icon"

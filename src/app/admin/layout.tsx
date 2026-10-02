@@ -1,7 +1,13 @@
+import { Metadata } from "next";
 import { requireAuth, getProfile } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { AdminShell } from "@/components/admin/admin-shell";
+import { getPermissionsForRole } from "@/lib/access";
+
+export const metadata: Metadata = {
+  title: "Admin",
+};
 
 export default async function AdminLayout({
   children,
@@ -26,6 +32,8 @@ export default async function AdminLayout({
     redirect("/admin/forbidden");
   }
 
+  const permissions = await getPermissionsForRole(profile.role);
+
   return (
     <AdminShell
       user={{
@@ -34,6 +42,7 @@ export default async function AdminLayout({
         full_name: profile.full_name,
         role: profile.role,
       }}
+      permissions={permissions}
     >
       {children}
     </AdminShell>

@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -26,7 +26,7 @@ import {
   prayerTimeSchema,
 } from "@/lib/validations";
 import { slugify } from "@/lib/utils/format";
-import { roleHasPermission } from "@/lib/permissions";
+import { getCurrentAccess, isAdminRole } from "@/lib/access";
 import type { Expense } from "@/types/database";
 
 type ActionResult = { error?: string; success?: boolean; id?: string; warning?: string };
@@ -78,6 +78,11 @@ export async function createDonation(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("donation.create")) {
+    return { error: "You are not allowed to create donations" };
+  }
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = donationSchema.safeParse({
     ...raw,
@@ -121,6 +126,11 @@ export async function updateDonation(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("donation.update")) {
+    return { error: "You are not allowed to update donations" };
+  }
+
   const id = formData.get("id") as string;
   const raw = Object.fromEntries(formData.entries());
   delete raw.id;
@@ -157,6 +167,11 @@ export async function updateDonation(
 }
 
 export async function deleteDonation(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("donation.delete")) {
+    return { error: "You are not allowed to delete donations" };
+  }
+
   const id = formData.get("id") as string;
   const supabase = await createClient();
   const { data: old } = await supabase.from("donations").select("*").eq("id", id).single();
@@ -183,8 +198,8 @@ export async function deleteDonation(formData: FormData) {
 }
 
 export async function approveDonation(formData: FormData) {
-  const actorRole = await getCurrentUserRole();
-  if (!roleHasPermission(actorRole, "donation.update")) {
+  const access = await getCurrentAccess();
+  if (!access.has("donation.update")) {
     return { error: "You are not allowed to approve donations" };
   }
   const id = formData.get("id") as string;
@@ -213,8 +228,8 @@ export async function approveDonation(formData: FormData) {
 }
 
 export async function rejectDonation(formData: FormData) {
-  const actorRole = await getCurrentUserRole();
-  if (!roleHasPermission(actorRole, "donation.update")) {
+  const access = await getCurrentAccess();
+  if (!access.has("donation.update")) {
     return { error: "You are not allowed to reject donations" };
   }
   const id = formData.get("id") as string;
@@ -257,6 +272,11 @@ export async function createExpense(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("expense.create")) {
+    return { error: "You are not allowed to create expenses" };
+  }
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = expenseSchema.safeParse({
     ...raw,
@@ -291,6 +311,11 @@ export async function updateExpense(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("expense.update")) {
+    return { error: "You are not allowed to update expenses" };
+  }
+
   const id = formData.get("id") as string;
   const raw = Object.fromEntries(formData.entries());
   delete raw.id;
@@ -320,6 +345,11 @@ export async function updateExpense(
 }
 
 export async function approveExpense(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("expense.approve")) {
+    return { error: "You are not allowed to approve expenses" };
+  }
+
   const id = formData.get("id") as string;
   const supabase = await createClient();
   const userId = await getCurrentUserId();
@@ -345,6 +375,11 @@ export async function approveExpense(formData: FormData) {
 }
 
 export async function rejectExpense(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("expense.approve")) {
+    return { error: "You are not allowed to reject expenses" };
+  }
+
   const id = formData.get("id") as string;
   const reason = (formData.get("reason") as string) || "Rejected";
   const supabase = await createClient();
@@ -370,6 +405,11 @@ export async function rejectExpense(formData: FormData) {
 }
 
 export async function deleteExpense(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("expense.delete")) {
+    return { error: "You are not allowed to delete expenses" };
+  }
+
   const id = formData.get("id") as string;
   const supabase = await createClient();
   const { data: old } = await supabase.from("expenses").select("*").eq("id", id).single();
@@ -557,6 +597,11 @@ export async function createMember(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("member.create")) {
+    return { error: "You are not allowed to create member records" };
+  }
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = memberSchema.safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
@@ -585,6 +630,11 @@ export async function updateMember(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("member.update")) {
+    return { error: "You are not allowed to update member records" };
+  }
+
   const id = formData.get("id") as string;
   const raw = Object.fromEntries(formData.entries());
   delete raw.id;
@@ -600,6 +650,11 @@ export async function updateMember(
 }
 
 export async function deleteMember(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("member.update")) {
+    return { error: "You are not allowed to delete member records" };
+  }
+
   const id = formData.get("id") as string;
   const supabase = await createClient();
   const { error } = await supabase
@@ -680,6 +735,11 @@ export async function createStaff(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("staff.manage")) {
+    return { error: "You are not allowed to create staff records" };
+  }
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = staffSchema.safeParse({
     ...raw,
@@ -705,6 +765,11 @@ export async function updateStaff(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("staff.manage")) {
+    return { error: "You are not allowed to update staff records" };
+  }
+
   const id = formData.get("id") as string;
   const raw = Object.fromEntries(formData.entries());
   delete raw.id;
@@ -723,6 +788,11 @@ export async function updateStaff(
 }
 
 export async function deleteStaff(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("staff.manage")) {
+    return { error: "You are not allowed to delete staff records" };
+  }
+
   const id = formData.get("id") as string;
   const supabase = await createClient();
   const { error } = await supabase
@@ -743,6 +813,11 @@ export async function createEvent(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("event.manage")) {
+    return { error: "You are not allowed to create events" };
+  }
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = eventSchema.safeParse({
     ...raw,
@@ -776,6 +851,11 @@ export async function updateEvent(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("event.manage")) {
+    return { error: "You are not allowed to update events" };
+  }
+
   const id = formData.get("id") as string;
   const raw = Object.fromEntries(formData.entries());
   delete raw.id;
@@ -805,6 +885,11 @@ slug: await ensureUniqueSlug("events", slugify(parsed.data.title), id),
 }
 
 export async function deleteEvent(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("event.manage")) {
+    return { error: "You are not allowed to delete events" };
+  }
+
   const id = formData.get("id") as string;
   const supabase = await createClient();
   const { error } = await supabase.from("events").delete().eq("id", id);
@@ -822,6 +907,11 @@ export async function createAnnouncement(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("announcement.manage")) {
+    return { error: "You are not allowed to create announcements" };
+  }
+
   const raw = Object.fromEntries(formData.entries());
   const parsed = announcementSchema.safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
@@ -847,6 +937,11 @@ export async function updateAnnouncement(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("announcement.manage")) {
+    return { error: "You are not allowed to update announcements" };
+  }
+
   const id = formData.get("id") as string;
   const raw = Object.fromEntries(formData.entries());
   delete raw.id;
@@ -869,6 +964,11 @@ export async function updateAnnouncement(
 }
 
 export async function deleteAnnouncement(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("announcement.manage")) {
+    return { error: "You are not allowed to delete announcements" };
+  }
+
   const id = formData.get("id") as string;
   const { error } = await (await createClient()).from("announcements").delete().eq("id", id);
   if (error) return { error: error.message };
@@ -1103,6 +1203,11 @@ export async function deleteDocument(formData: FormData) {
 // ============================================================
 
 export async function updateContactRequestStatus(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("users.manage")) {
+    return { error: "You are not allowed to manage contact requests" };
+  }
+
   const id = formData.get("id") as string;
   const status = formData.get("status") as string;
   const notes = (formData.get("notes") as string) || null;
@@ -1118,6 +1223,11 @@ export async function updateContactRequestStatus(formData: FormData) {
 }
 
 export async function deleteContactRequest(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("users.manage")) {
+    return { error: "You are not allowed to delete contact requests" };
+  }
+
   const id = formData.get("id") as string;
   const { error } = await (await createClient()).from("contact_requests").delete().eq("id", id);
   if (error) return { error: error.message };
@@ -1134,6 +1244,11 @@ export async function upsertPrayerTimes(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("prayer.update")) {
+    return { error: "You are not allowed to manage prayer times" };
+  }
+
   const parsed = prayerTimeSchema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
   const data = parsed.data;
@@ -1183,6 +1298,11 @@ export async function upsertPrayerTimes(
 }
 
 export async function copyPrayerTimes(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("prayer.update")) {
+    return { error: "You are not allowed to copy prayer times" };
+  }
+
   const fromDate = formData.get("from_date") as string;
   const toDate = formData.get("to_date") as string;
   const supabase = await createClient();
@@ -1236,6 +1356,11 @@ export async function copyPrayerTimes(formData: FormData) {
 }
 
 export async function deletePrayerTimes(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("prayer.update")) {
+    return { error: "You are not allowed to delete prayer times" };
+  }
+
   const id = formData.get("id") as string;
   const supabase = await createClient();
   const { error } = await supabase.from("prayer_times").delete().eq("id", id);
@@ -1253,8 +1378,8 @@ export async function updateSettings(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
-  const actorRole = await getCurrentUserRole();
-  if (!roleHasPermission(actorRole, "settings.manage")) {
+  const access = await getCurrentAccess();
+  if (!access.has("settings.manage")) {
     return { error: "You are not allowed to change settings" };
   }
 
@@ -1358,8 +1483,8 @@ export async function createZakatDistribution(
 // ============================================================
 
 export async function createUserAccount(formData: FormData): Promise<ActionResult> {
-  const actorRole = await getCurrentUserRole();
-  if (actorRole !== "super_admin") {
+  const access = await getCurrentAccess();
+  if (!access.isSuperAdmin) {
     return { error: "Only the Super Admin can create accounts" };
   }
 
@@ -1459,20 +1584,22 @@ export async function createUserAccount(formData: FormData): Promise<ActionResul
 }
 
 export async function updateUserRole(formData: FormData) {
-  const actorRole = await getCurrentUserRole();
-  if (!actorRole || !["super_admin", "admin"].includes(actorRole)) {
+  const access = await getCurrentAccess();
+  if (!isAdminRole(access.role)) {
     return { error: "You are not allowed to change roles" };
   }
 
   const userId = formData.get("id") as string;
   const role = formData.get("role") as string;
-  if (role === "super_admin" && actorRole !== "super_admin") {
+  if (role === "super_admin" && !access.isSuperAdmin) {
     return { error: "Only the Super Admin can assign the Super Admin role" };
   }
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { error } = await supabase.from("profiles").update({ role }).eq("id", userId);
   if (error) return { error: error.message };
+
+  await syncUserRole(userId, role);
 
   logAudit({
     action: "update",
@@ -1487,15 +1614,15 @@ export async function updateUserRole(formData: FormData) {
 }
 
 export async function toggleUserStatus(formData: FormData) {
-  const actorRole = await getCurrentUserRole();
-  if (!actorRole || !["super_admin", "admin"].includes(actorRole)) {
+  const access = await getCurrentAccess();
+  if (!isAdminRole(access.role)) {
     return { error: "You are not allowed to change user status" };
   }
 
   const userId = formData.get("id") as string;
   const status = formData.get("status") as string;
-  const supabase = await createClient();
-  if (actorRole !== "super_admin") {
+  const supabase = createAdminClient();
+  if (!access.isSuperAdmin) {
     const { data: target } = await supabase
       .from("profiles")
       .select("role")
@@ -1525,31 +1652,101 @@ export async function saveRolePermissions(
   _prev: ActionResult,
   formData: FormData
 ): Promise<ActionResult> {
-  const roleId = formData.get("role_id") as string;
-  const permissionIds = formData.getAll("permissions") as string[];
-  const supabase = await createClient();
+  const access = await getCurrentAccess();
+  if (!access.isSuperAdmin) {
+    return { error: "Only the Super Admin can change permissions" };
+  }
 
-  const { error: delErr } = await supabase
+  const roleId = (formData.get("role_id") as string)?.trim();
+  const permissionIds = (formData.getAll("permissions") as string[])
+    .map((id) => (id ?? "").trim())
+    .filter(Boolean);
+  if (!roleId) return { error: "Missing role" };
+
+  // The session client is subject to RLS, which is not a live boundary here.
+  const supabase = createAdminClient();
+
+  const { data: roleRow, error: roleErr } = await supabase
+    .from("roles")
+    .select("id, name")
+    .eq("id", roleId)
+    .single();
+  if (roleErr || !roleRow) return { error: "That role no longer exists" };
+
+  const { data: validRows } = await supabase.from("permissions").select("id, name");
+  const validById = new Map((validRows ?? []).map((p) => [p.id as string, p.name as string]));
+  const uniqueIds = Array.from(new Set(permissionIds)).filter((id) => validById.has(id));
+
+  if (permissionIds.length !== uniqueIds.length) {
+    return {
+      error: `${permissionIds.length - uniqueIds.length} permission(s) could not be recognised. Reload the page and try again.`,
+    };
+  }
+
+  // Never let the last super admin lock everyone out of the Roles page.
+  if (roleRow.name === "super_admin") {
+    const total = validById.size;
+    if (uniqueIds.length < total) {
+      return { error: "The Super Admin role must keep every permission enabled" };
+    }
+  }
+
+  const { data: before } = await supabase
     .from("role_permissions")
-    .delete()
+    .select("permissions(name), roles!inner(name)")
     .eq("role_id", roleId);
+  const beforeNames = (before ?? [])
+    .map((row) => (row as { permissions?: { name?: string } | null }).permissions?.name)
+    .filter((name): name is string => typeof name === "string");
+
+  const { error: delErr } = await supabase.from("role_permissions").delete().eq("role_id", roleId);
   if (delErr) return { error: delErr.message };
 
-  if (permissionIds.length) {
-    const { error: insErr } = await supabase.from("role_permissions").insert(
-      permissionIds.map((pid) => ({ role_id: roleId, permission_id: pid }))
-    );
+  if (uniqueIds.length) {
+    const { error: insErr } = await supabase
+      .from("role_permissions")
+      .insert(uniqueIds.map((pid) => ({ role_id: roleId, permission_id: pid })));
     if (insErr) return { error: insErr.message };
   }
+
+  const afterNames = uniqueIds.map((id) => validById.get(id)!);
 
   logAudit({
     action: "update",
     module: "roles",
     entity: "role_permissions",
     entityId: roleId,
-    newData: { permissions: permissionIds },
+    newData: { role: roleRow.name, permissions: afterNames },
+    oldData: { role: roleRow.name, permissions: beforeNames },
   });
 
+  // The admin layout resolves the nav from these rows, so the change must be
+  // pushed to every server-rendered admin surface immediately.
   revalidatePath("/admin/roles");
+  revalidatePath("/admin", "layout");
   return { success: true };
 }
+
+/**
+ * `profiles.role` is what the app reads, but the RBAC tables also expect a
+ * `user_roles` row. Keeping both in sync means DB-level policies and the app
+ * agree on who a user is.
+ */
+async function syncUserRole(userId: string, role: string) {
+  const supabase = createAdminClient();
+  const { data: roleRow } = await supabase
+    .from("roles")
+    .select("id")
+    .eq("name", role)
+    .maybeSingle();
+  if (!roleRow) return;
+
+  await supabase.from("user_roles").delete().eq("user_id", userId);
+  const { error } = await supabase
+    .from("user_roles")
+    .insert({ user_id: userId, role_id: roleRow.id });
+  if (error) {
+    console.error("[roles] failed to sync user_roles for", userId, error.message);
+  }
+}
+

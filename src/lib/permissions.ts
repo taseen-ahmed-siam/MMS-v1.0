@@ -1,62 +1,13 @@
-export const ROLE_PERMISSIONS: Record<string, string[]> = {
-  super_admin: ["*"],
-  admin: [
-    "dashboard.view",
-    "prayer.view",
-    "prayer.create",
-    "prayer.update",
-    "donation.view",
-    "donation.create",
-    "donation.update",
-    "donation.delete",
-    "expense.view",
-    "expense.create",
-    "expense.update",
-    "expense.approve",
-    "member.view",
-    "member.create",
-    "member.update",
-    "event.manage",
-    "announcement.manage",
-    "staff.manage",
-    "reports.view",
-    "settings.manage",
-    "audit.view",
-  ],
-  treasurer: [
-    "dashboard.view",
-    "donation.view",
-    "donation.create",
-    "donation.update",
-    "expense.view",
-    "expense.create",
-    "expense.update",
-    "expense.approve",
-    "reports.view",
-  ],
-  imam: ["dashboard.view", "prayer.view", "prayer.update", "announcement.manage"],
-  muazzin: ["dashboard.view", "prayer.view", "announcement.manage"],
-  committee_member: [],
-  staff: [],
-  member: ["dashboard.view", "donation.view.own"],
-};
+export const SUPER_ADMIN = "super_admin";
+export const ADMIN = "admin";
 
-const SUPER_ADMIN = "super_admin";
-const ADMIN = "admin";
-
-export function roleHasPermission(role: string | null | undefined, permission: string): boolean {
-  if (!role) return false;
-  const perms = ROLE_PERMISSIONS[role] ?? [];
-  if (perms.includes("*")) return true;
-  return perms.includes(permission);
-}
-
-export function isAdmin(role: string | null | undefined): boolean {
-  return role === SUPER_ADMIN || role === ADMIN;
-}
-
-export function isSuperAdmin(role: string | null | undefined): boolean {
+/** Super admin keeps working even if every permission is revoked. */
+export function isSuperAdminRole(role: string | null | undefined): boolean {
   return role === SUPER_ADMIN;
+}
+
+export function isAdminRole(role: string | null | undefined): boolean {
+  return role === SUPER_ADMIN || role === ADMIN;
 }
 
 export type NavVisibility =
@@ -95,14 +46,49 @@ export const NAV_PERMISSIONS: Record<string, NavVisibility> = {
   "/admin/settings": { kind: "permission", permission: "settings.manage" },
 };
 
-export function navItemAllowed(role: string | null | undefined, href: string): boolean {
+/**
+ * `permissions` must be the list resolved from Postgres by
+ * `getPermissionsForRole()` in `@/lib/access`, so revoking a checkbox in
+ * /admin/roles removes access on the very next request.
+ */
+export function permissionsAllow(
+  permissions: string[] | null | undefined,
+  permission: string
+): boolean {
+  if (!permissions?.length) return false;
+  if (permissions.includes("*")) return true;
+  return permissions.includes(permission);
+}
+
+export function navItemAllowed(
+  role: string | null | undefined,
+  permissions: string[] | null | undefined,
+  href: string
+): boolean {
   const visibility = NAV_PERMISSIONS[href];
   if (!visibility) return false;
-  if (visibility.kind === "permission" && visibility.excludedRoles?.includes(role ?? "")) {
-    return false;
+
+  if (visibility.kind === "permission") {
+    if (visibility.excludedRoles?.includes(role ?? "")) return false;
+    return permissionsAllow(permissions, visibility.permission);
   }
-  if (visibility.kind === "permission") return roleHasPermission(role, visibility.permission);
-  if (visibility.kind === "super_admin") return isSuperAdmin(role);
-  if (visibility.kind === "admin") return isAdmin(role);
+  if (visibility.kind === "super_admin") return role === SUPER_ADMIN;
+  if (visibility.kind === "admin") return role === SUPER_ADMIN || role === ADMIN;
   return false;
+}
+
+/** Longest-prefix lookup so nested routes inherit their section's permission. */
+export function permissionForPath(
+  role: string | null | undefined,
+  permissions: string[] | null | undefined,
+  pathname: string
+): boolean {
+  if (pathname === "/admin" || pathname === "/admin/") {
+    return navItemAllowed(role, permissions, "/admin");
+  }
+  const match = Object.keys(NAV_PERMISSIONS)
+    .filter((href) => href !== "/admin" && pathname.startsWith(`${href}/`))
+    .sort((a, b) => b.length - a.length)[0];
+  if (match) return navItemAllowed(role, permissions, match);
+  return navItemAllowed(role, permissions, pathname);
 }

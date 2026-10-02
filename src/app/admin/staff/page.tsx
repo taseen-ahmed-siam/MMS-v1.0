@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/access";
 import { Metadata } from "next";
 import { getStaff } from "@/lib/queries/admin";
 import { PAGE_SIZE } from "@/constants";
@@ -7,11 +8,15 @@ export const metadata: Metadata = {
   title: "Staff",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function StaffPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
+  await requirePermission("staff.manage");
+
   const params = await searchParams;
   const search = params.search ?? "";
   const status = params.status !== "__all__" ? params.status : undefined;

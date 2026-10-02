@@ -18,8 +18,8 @@ import {
   QuickActions,
 } from "@/components/admin/dashboard";
 import { formatCurrency, timeAgo, cn } from "@/lib/utils/format";
-import { createClient } from "@/lib/supabase/server";
-import { isAdmin, roleHasPermission } from "@/lib/permissions";
+import { isAdminRole } from "@/lib/permissions";
+import { requirePermission } from "@/lib/access";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -74,25 +74,13 @@ export default async function AdminDashboard() {
       getRecentActivity(),
     ]);
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  let currentRole: string | null = null;
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-    currentRole = profile?.role ?? null;
-  }
-
-  const admin = isAdmin(currentRole);
-  const canViewDonations = roleHasPermission(currentRole, "donation.view");
-  const canViewExpenses = roleHasPermission(currentRole, "expense.view");
-  const canViewMembers = roleHasPermission(currentRole, "member.view");
-  const canViewAudit = roleHasPermission(currentRole, "audit.view");
+  const access = await requirePermission("dashboard.view");
+  const currentRole = access.role;
+  const admin = isAdminRole(currentRole);
+  const canViewDonations = access.has("donation.view");
+  const canViewExpenses = access.has("expense.view");
+  const canViewMembers = access.has("member.view");
+  const canViewAudit = access.has("audit.view");
 
   const card = (
     title: string,
@@ -197,7 +185,7 @@ export default async function AdminDashboard() {
             <RecentActivityTable activity={activity} />
           </SectionCard>
         )}
-        {isAdmin(currentRole) && (
+        {isAdminRole(currentRole) && (
           <SectionCard title="Quick Actions">
             <QuickActions />
           </SectionCard>

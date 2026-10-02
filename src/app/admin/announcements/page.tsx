@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/access";
 import { Metadata } from "next";
 import { getAllAnnouncements } from "@/lib/queries/admin";
 import { PAGE_SIZE } from "@/constants";
@@ -7,11 +8,15 @@ export const metadata: Metadata = {
   title: "Announcements",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function AnnouncementsPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
+  await requirePermission("announcement.manage");
+
   const params = await searchParams;
   const search = params.search ?? "";
   const status = params.status !== "__all__" ? params.status : undefined;

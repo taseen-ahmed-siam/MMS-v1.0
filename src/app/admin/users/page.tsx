@@ -1,3 +1,4 @@
+﻿import { requireAdminRole } from "@/lib/access";
 import { Metadata } from "next";
 import { getUsers } from "@/lib/queries/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -7,7 +8,11 @@ export const metadata: Metadata = {
   title: "Users",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function UsersPage() {
+  await requireAdminRole();
+
   const data = await getUsers();
 
   const supabase = await createClient();

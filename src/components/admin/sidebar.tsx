@@ -41,6 +41,7 @@ interface SidebarProps {
   collapsed: boolean;
   onNavigate: () => void;
   role?: string | null;
+  permissions?: string[];
 }
 
 interface NavItem {
@@ -146,7 +147,7 @@ function SidebarLink({
   );
 }
 
-export function AdminSidebar({ collapsed, onNavigate, role }: SidebarProps) {
+export function AdminSidebar({ collapsed, onNavigate, role, permissions }: SidebarProps) {
   const pathname = usePathname();
   const displayRole = role ? (ROLE_LABELS[role.toLowerCase()] ?? `MMS ${role.charAt(0).toUpperCase()}${role.slice(1)}`) : "MMS";
 
@@ -158,14 +159,14 @@ export function AdminSidebar({ collapsed, onNavigate, role }: SidebarProps) {
   const visibleGroups = navGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => navItemAllowed(role, item.href)),
+      items: group.items.filter((item) => navItemAllowed(role, permissions, item.href)),
     }))
     .filter((group) => group.items.length > 0);
 
   return (
     <div
       className={cn(
-        "islamic-pattern-dark flex h-full flex-col bg-[#064E3B] text-white transition-all duration-300",
+        "islamic-pattern-dark flex h-full flex-col bg-[#064E3B] text-white transition-all duration-300 print:hidden",
         collapsed ? "w-16" : "w-64"
       )}
     >

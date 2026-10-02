@@ -79,9 +79,12 @@ body {
     margin: 12mm;
   }
 
+  html,
   body {
     background: #ffffff;
     color: #17201c;
+    height: auto;
+    overflow: visible;
   }
 }
 

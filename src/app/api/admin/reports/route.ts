@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { getCurrentProfile } from "@/lib/auth/session";
+import { getPermissionsForRole } from "@/lib/access";
+import { permissionsAllow } from "@/lib/permissions";
 import { createAdminClient } from "@/lib/supabase/admin";
+
+type RowSource = "donation" | "income" | "expense";
 
 type RawRow = {
   id: string;
@@ -9,6 +13,9 @@ type RawRow = {
   description: string;
   fundType: string;
   fundId: string | null;
+  source: RowSource;
+  status: string;
+  expenseCategory: string | null;
   incomeAmount: number;
   expenseAmount: number;
   netBalance: number;
@@ -61,6 +68,13 @@ export async function GET(request: NextRequest) {
   const profile = await getCurrentProfile();
   if (!profile) return NextResponse.json({ error: "Authentication required." }, { status: 401 });
   if (profile.status !== "active") return NextResponse.json({ error: "Your account is not active." }, { status: 403 });
+
+  // This route uses the service-role key, so RLS is bypassed and the
+  // permission has to be checked here.
+  const permissions = await getPermissionsForRole(profile.role);
+  if (!permissionsAllow(permissions, "reports.view")) {
+    return NextResponse.json({ error: "You do not have permission to view reports." }, { status: 403 });
+  }
 
   const searchParams = request.nextUrl.searchParams;
   const month = searchParams.get("month") || "";
@@ -133,6 +147,9 @@ export async function GET(request: NextRequest) {
         isException: false,
         exceptionReason: null,
         fundId: row.fund_id ?? generalFundId,
+        source: "donation" as const,
+        status: "completed",
+        expenseCategory: null,
       };
     }),
     ...(incomes.data || []).map((row) => ({
@@ -146,6 +163,9 @@ export async function GET(request: NextRequest) {
       isException: false,
       exceptionReason: null,
       fundId: generalFundId,
+      source: "income" as const,
+      status: "recorded",
+      expenseCategory: null,
     })),
     ...(expenses.data || []).map((row) => ({
       id: `expense-${row.id}`,
@@ -158,6 +178,9 @@ export async function GET(request: NextRequest) {
       isException: row.status === "pending" || row.status === "draft",
       exceptionReason: row.status === "pending" ? "Pending" : row.status === "draft" ? "Draft" : null,
       fundId: generalFundId,
+      source: "expense" as const,
+      status: row.status,
+      expenseCategory: row.expense_category ?? null,
     })),
   ];
 

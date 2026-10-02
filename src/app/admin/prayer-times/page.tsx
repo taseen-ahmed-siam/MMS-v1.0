@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/access";
 import { Metadata } from "next";
 import {
   getMosqueSettings,
@@ -12,7 +13,11 @@ export const metadata: Metadata = {
   title: "Prayer Times",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminPrayerTimesPage() {
+  await requirePermission("prayer.view");
+
   const settings = await getMosqueSettings();
   const timezone = settings?.timezone || MOSQUE_TIMEZONE;
   const [upcoming, recent] = await Promise.all([

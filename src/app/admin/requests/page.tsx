@@ -1,3 +1,4 @@
+﻿import { requireAdminRole } from "@/lib/access";
 import { Metadata } from "next";
 import { getContactRequests } from "@/lib/queries/admin";
 import { PAGE_SIZE } from "@/constants";
@@ -7,11 +8,15 @@ export const metadata: Metadata = {
   title: "Requests",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function RequestsPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  await requireAdminRole();
+
   const params = await searchParams;
   const page = Number(params.page) || 1;
   const search = typeof params.search === "string" ? params.search : "";

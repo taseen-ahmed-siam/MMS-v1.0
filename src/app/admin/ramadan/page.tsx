@@ -1,3 +1,4 @@
+﻿import { requireAdminRole } from "@/lib/access";
 import { Metadata } from "next";
 import Link from "next/link";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -14,7 +15,11 @@ export const metadata: Metadata = {
   title: "Ramadan",
 };
 
-export default function AdminRamadanPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminRamadanPage() {
+  await requireAdminRole();
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">

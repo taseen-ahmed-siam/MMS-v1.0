@@ -1,3 +1,4 @@
+﻿import { requirePermission } from "@/lib/access";
 import { Metadata } from "next";
 import { getDonations, getFunds } from "@/lib/queries/admin";
 import { PAGE_SIZE } from "@/constants";
@@ -7,11 +8,15 @@ export const metadata: Metadata = {
   title: "Donations",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function DonationsPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  await requirePermission("donation.view");
+
   const params = await searchParams;
   const page = Number(params.page) || 1;
   const search = typeof params.search === "string" ? params.search : "";
