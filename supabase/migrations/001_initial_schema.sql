@@ -158,6 +158,10 @@ CREATE TABLE IF NOT EXISTS events (
   slug TEXT UNIQUE NOT NULL,
   description TEXT,
   event_type TEXT,
+  fund_id UUID REFERENCES donation_funds(id) ON DELETE SET NULL,
+  contribution_amount NUMERIC(12,2) DEFAULT 0,
+  contribution_start_date DATE,
+  contribution_due_date DATE,
   start_date DATE NOT NULL,
   end_date DATE,
   start_time TIME,
@@ -172,6 +176,16 @@ CREATE TABLE IF NOT EXISTS events (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS event_members (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  member_id UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+  assigned_amount NUMERIC(12,2) DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  UNIQUE (event_id, member_id)
 );
 
 -- ============================================================
@@ -298,6 +312,7 @@ CREATE TABLE IF NOT EXISTS donations (
   donor_phone TEXT,
   donor_email TEXT,
   fund_id UUID REFERENCES donation_funds(id) ON DELETE SET NULL,
+  member_id UUID REFERENCES members(id) ON DELETE SET NULL,
   amount NUMERIC(12,2) NOT NULL CHECK (amount > 0),
   payment_method VARCHAR(20) DEFAULT 'cash' CHECK (payment_method IN ('cash','bank_transfer','bkash','nagad','rocket','card','other')),
   transaction_id TEXT,
@@ -310,6 +325,18 @@ CREATE TABLE IF NOT EXISTS donations (
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   deleted_at TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS contribution_reminder_emails (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  member_id UUID NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+  recipient_email TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  message TEXT NOT NULL,
+  sent_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  sent_at TIMESTAMPTZ DEFAULT NOW(),
+  status VARCHAR(20) DEFAULT 'sent' CHECK (status IN ('sent','failed'))
 );
 
 -- ============================================================

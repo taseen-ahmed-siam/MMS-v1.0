@@ -77,6 +77,24 @@ Built for mosques and Islamic centers that need a single system to manage worshi
 - Assets, maintenance, documents, and request workflows
 - Ramadan, audit logs, and settings modules
 
+### Event Contribution Tracking
+
+An event can be linked to an existing donation fund and given a per-head contribution amount.
+Members are then assigned to the event, and the linked fund's approved payments drive everything
+on the event's contribution page (`/admin/events/<eventId>`):
+
+```
+Approved Fund Contribution  →  donations.member_id identifies the member
+                           →  paid / remaining derived at render time
+                           →  Completed / Incomplete derived (paid >= assigned)
+                           →  summary counts and progress bar follow automatically
+```
+
+- Per-member assigned, paid, remaining, and Completed/Incomplete status
+- Search, status and payment-stage filters, sorting, and pagination
+- Email reminders to one member at a time, with history of what was sent and when
+- No second payment system: approving a donation in `/admin/donations` is all it takes
+
 ### Security & Access Control
 
 - Supabase authentication integration
@@ -189,6 +207,26 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Public anon key for browser access
 - `SUPABASE_SERVICE_ROLE_KEY`: Server-side secret; keep it private
 - `NEXT_PUBLIC_APP_URL`: Base URL used by the app in local or production environments
+
+### Email (Event Contribution Reminders)
+
+Reminders are sent from the server with Nodemailer over SMTP. These variables are optional:
+without them the contribution tracking page still works, it just reports that reminders are
+disabled and the send button stays unavailable.
+
+```env
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your-smtp-username
+SMTP_PASS=your-smtp-password
+SMTP_SECURE=false
+EMAIL_FROM=admin@your-mosque.com
+EMAIL_FROM_NAME=Al-Noor Mosque
+```
+
+- `SMTP_PORT`: `587` for STARTTLS, `465` for implicit TLS (`SMTP_SECURE=true` is applied automatically on 465)
+- `EMAIL_FROM`: must be an address the provider accepts as a verified sender. It always falls back to `SMTP_USER` if omitted, and can never be set from the browser
+- These values are read only in `src/lib/email.ts`, which is a `server-only` module, so credentials never reach client code
 
 ---
 

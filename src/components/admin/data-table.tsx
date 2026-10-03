@@ -14,9 +14,11 @@ import {
 
 interface Column<T = unknown> {
   key: string
-  header: string
+  /** Plain string, or a node when a column needs an interactive header (e.g. sorting). */
+  header: React.ReactNode
   cell: (row: T) => React.ReactNode
   className?: string
+  headClassName?: string
 }
 
 interface DataTableProps<T = unknown> {
@@ -39,7 +41,7 @@ function DataTable<T>({
           {columns.map((col) => (
             <TableHead
               key={col.key}
-              className={cn("text-xs font-semibold uppercase tracking-wider text-white", col.className)}
+              className={cn("text-xs font-semibold uppercase tracking-wider text-white", col.className, col.headClassName)}
             >
               {col.header}
             </TableHead>

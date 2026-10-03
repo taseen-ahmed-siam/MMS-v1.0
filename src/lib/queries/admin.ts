@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { deriveContribution } from "@/lib/utils/contribution";
 import type {
   Donation,
   Expense,
@@ -23,6 +24,9 @@ import type {
   ZakatCollection,
   ZakatBeneficiary,
   ZakatDistribution,
+  EventMember,
+  EventMemberContribution,
+  ContributionReminderEmail,
 } from "@/types/database";
 
 function isToday(dateStr: string | null | undefined) {
@@ -228,7 +232,9 @@ export async function getDonations({
   const supabase = await createClient();
   let query = supabase
     .from("donations")
-    .select("*, donation_funds(name)", { count: "exact" })
+    .select("*, donation_funds(name), members!donations_member_id_fkey(full_name, member_id)", {
+      count: "exact",
+    })
     .is("deleted_at", null);
 
   if (search) {
@@ -593,6 +599,323 @@ export async function getAllEvents({
     pageSize,
     totalPages: Math.ceil((count ?? 0) / pageSize),
   };
+}
+
+export async function getEventById(
+  id: string
+): Promise<(Event & { donation_funds: DonationFund | null }) | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("events")
+    .select("*, donation_funds(*)")
+    .eq("id", id)
+    .single();
+  if (!data) return null;
+
+  const rawFund = (data as { donation_funds?: unknown }).donation_funds;
+  const fund = (
+    Array.isArray(rawFund) ? rawFund[0] : rawFund
+  ) as DonationFund | null;
+
+  return {
+    ...(data as Event),
+    donation_funds: fund ?? null,
+  };
+}
+
+export async function getEventMembers(eventId: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("event_members")
+    .select("*, members(*)")
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: true });
+  return (data as (EventMember & { members: Member })[]) ?? [];
+}
+
+/**
+ * Contribution rows for one event.
+ *
+ * The linked fund is the financial source of truth: a member's paid amount is
+ * the sum of their *approved* donations (`status = 'completed'`) to that fund,
+ * matched on `donations.member_id`. Nothing here is stored, so status can never
+ * drift out of sync with the fund.
+ */
+export async function getEventContributionRows(eventId: string) {
+  const supabase = await createClient();
+  const event = await getEventById(eventId);
+  if (!event) return [];
+  if (!event.fund_id) return [];
+
+  const [assignmentsRes, donationsRes, remindersRes, membersRes] = await Promise.all([
+    supabase
+      .from("event_members")
+      .select("id, event_id, member_id, assigned_amount, created_at, created_by")
+      .eq("event_id", eventId),
+    supabase
+      .from("donations")
+      .select("id, donor_name, donor_phone, donor_email, fund_id, member_id, amount, payment_method, transaction_id, donation_date, is_anonymous, notes, status, receipt_number, created_at, updated_at, created_by, user_id, deleted_at")
+      .eq("fund_id", event.fund_id)
+      .eq("status", "completed")
+      .is("deleted_at", null)
+      .order("donation_date", { ascending: true }),
+    supabase
+      .from("contribution_reminder_emails")
+      .select("*")
+      .eq("event_id", eventId)
+      .eq("status", "sent")
+      .order("sent_at", { ascending: false }),
+    supabase.from("members").select("id, member_id, full_name, phone, email").is("deleted_at", null),
+  ]);
+
+  const memberLookup = new Map<string, { member_code: string | null; full_name: string; phone: string | null; email: string | null }>();
+  ((membersRes.data ?? []) as Member[]).forEach((member) => {
+    memberLookup.set(member.id, {
+      member_code: member.member_id,
+      full_name: member.full_name,
+      phone: member.phone,
+      email: member.email,
+    });
+  });
+
+  const approvedByMember = new Map<string, Donation[]>();
+  (donationsRes.data ?? []).forEach((donation: Donation) => {
+    if (!donation.member_id) return;
+    const existing = approvedByMember.get(donation.member_id);
+    if (existing) existing.push(donation);
+    else approvedByMember.set(donation.member_id, [donation]);
+  });
+
+  const lastReminderByMember = new Map<string, ContributionReminderEmail>();
+  (remindersRes.data ?? []).forEach((row) => {
+    if (!lastReminderByMember.has(row.member_id)) {
+      lastReminderByMember.set(row.member_id, row as ContributionReminderEmail);
+    }
+  });
+
+  return (assignmentsRes.data ?? []).map((row) => {
+    const member = memberLookup.get(row.member_id);
+    const approvedDonations = approvedByMember.get(row.member_id) ?? [];
+
+    // A per-member override wins; otherwise fall back to the event's per-head
+    // amount so changing that value later does not rewrite history.
+    const eventDefault = Number(event.contribution_amount || 0) || 0;
+    const storedAmount = Number(row.assigned_amount || 0) || 0;
+    const assignedAmount = storedAmount || eventDefault;
+
+    const derived = deriveContribution(
+      assignedAmount,
+      approvedDonations.map((donation) => Number(donation.amount || 0))
+    );
+
+    return {
+      event_id: row.event_id,
+      member_id: row.member_id,
+      member_code: member?.member_code ?? null,
+      member_name: member?.full_name ?? "Unknown member",
+      phone: member?.phone ?? null,
+      email: member?.email ?? null,
+      ...derived,
+      /** True when this member's amount differs from the event's per-head. */
+      is_override: storedAmount > 0 && storedAmount !== eventDefault,
+      approved_donations: approvedDonations,
+      last_reminder: lastReminderByMember.get(row.member_id) ?? null,
+    } satisfies EventMemberContribution;
+  });
+}
+
+export type EventContributionSummary = {
+  memberCount: number;
+  completed: number;
+  incomplete: number;
+  /** Sum of per-member assigned amounts: the amount this event expects. */
+  totalAssigned: number;
+  /** Approved payments from assigned members only. */
+  assignedPaid: number;
+  /** Sum of per-member remaining amounts: what assigned members still owe. */
+  totalRemaining: number;
+  /** Every approved payment to the linked fund, including unassigned donors. */
+  fundCollected: number;
+  /**
+   * What is still needed to reach the event's expectation, measured against the
+   * fund. Unlike `totalRemaining` this credits payments from donors who are not
+   * assigned to this event, so Collected + RemainingToTarget == Total Assigned
+   * and never reports money that has already arrived as still owed.
+   */
+  remainingToTarget: number;
+  fundTarget: number | null;
+  /** memberCount x per-head, shown next to the real assigned total. */
+  calculatedTarget: number;
+  collectionPercent: number;
+  completionPercent: number;
+  targetDifference: number | null;
+};
+
+export async function getEventContributionSummary(
+  eventId: string
+): Promise<EventContributionSummary> {
+  const event = await getEventById(eventId);
+  const rows = await getEventContributionRows(eventId);
+
+  const totalAssigned = rows.reduce((sum, row) => sum + Number(row.assigned_amount || 0), 0);
+  const assignedPaid = rows.reduce((sum, row) => sum + Number(row.paid_amount || 0), 0);
+  const memberRemaining = rows.reduce(
+    (sum, row) => sum + Number(row.remaining_amount || 0),
+    0
+  );
+  const completed = rows.filter((row) => row.status === "completed").length;
+  const incomplete = rows.filter((row) => row.status === "incomplete").length;
+
+  const perHead = Number(event?.contribution_amount || 0) || 0;
+  const calculatedTarget = rows.length * perHead;
+
+  // The fund's collected amount is the real source of truth for progress, so read
+  // it from the fund rather than re-adding the member donations (which exclude
+  // approved donations from donors who are not assigned to this event).
+  let fundCollected = Number(event?.donation_funds?.collected_amount || 0) || 0;
+  if (event?.fund_id) {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("donations")
+      .select("amount")
+      .eq("fund_id", event.fund_id)
+      .eq("status", "completed")
+      .is("deleted_at", null);
+    if (!error) {
+      fundCollected = ((data ?? []) as { amount: number | string | null }[]).reduce(
+        (sum, donation) => sum + (Number(donation.amount) || 0),
+        0
+      );
+    }
+  }
+
+  const fundTarget = event?.donation_funds ? Number(event.donation_funds.target_amount || 0) : null;
+
+  // The headline figure is measured against the fund, because that is what the
+  // user sees as "Collected" directly above it. Per-member remaining is kept
+  // alongside for the "across N incomplete members" hint.
+  const remainingToTarget = Math.max(totalAssigned - fundCollected, 0);
+
+  return {
+    memberCount: rows.length,
+    completed,
+    incomplete,
+    totalAssigned,
+    assignedPaid,
+    totalRemaining: memberRemaining,
+    fundCollected,
+    remainingToTarget,
+    fundTarget,
+    calculatedTarget,
+    collectionPercent: totalAssigned > 0 ? Math.round((fundCollected / totalAssigned) * 100) : 0,
+    completionPercent: rows.length ? Math.round((completed / rows.length) * 100) : 0,
+    targetDifference: fundTarget === null ? null : fundTarget - totalAssigned,
+  };
+}
+
+/**
+ * Members that can still be assigned to an event: every non-deleted member that
+ * has no `event_members` row yet. Search runs in Postgres so the admin picker
+ * stays responsive on large member lists.
+ */
+/**
+ * Strips PostgREST filter syntax out of a user-typed search term.
+ *
+ * `.or()` filters are strings, so a comma, dot, quote or parenthesis in the term
+ * would otherwise be parsed as more filter clauses: searching `a,id.not.is.null`
+ * would widen the query instead of narrowing it. Returns null when nothing
+ * searchable is left, so callers can skip the filter entirely.
+ */
+function sanitiseOrSearch(term: string): string | null {
+  const cleaned = term
+    .replace(/[,()"']/g, " ")
+    .replace(/[.*%]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 60);
+  return cleaned.length >= 2 ? cleaned : null;
+}
+
+export async function getAssignableMembers(
+  eventId: string,
+  { search = "", limit = 200 }: { search?: string; limit?: number } = {}
+) {
+  const supabase = await createClient();
+
+  const { data: assigned } = await supabase
+    .from("event_members")
+    .select("member_id")
+    .eq("event_id", eventId);
+
+  const assignedIds = (assigned ?? []).map((row) => row.member_id as string);
+
+  let query = supabase
+    .from("members")
+    .select("id, member_id, full_name, phone, email, status")
+    .is("deleted_at", null)
+    .order("full_name", { ascending: true })
+    .limit(limit);
+
+  const term = sanitiseOrSearch(search);
+  if (term) {
+    query = query.or(
+      `full_name.ilike.%${term}%,member_id.ilike.%${term}%,phone.ilike.%${term}%`
+    );
+  }
+
+  const { data, error } = await query;
+  if (error) return [];
+
+  const excluded = new Set(assignedIds);
+  return ((data ?? []) as Member[])
+    .filter((member) => !excluded.has(member.id))
+    .map((member) => ({
+      id: member.id,
+      member_code: member.member_id,
+      full_name: member.full_name,
+      phone: member.phone,
+      email: member.email,
+    }));
+}
+
+/**
+ * Members offered for linking to a donation recorded at the counter.
+ *
+ * A donation is the only way a payment becomes visible to event contribution
+ * tracking, and tracking joins on `donations.member_id`. An admin entering a
+ * cash donation is therefore the main way that link gets created, so the donor
+ * has to be pickable rather than typed in by name.
+ */
+export async function getMembersForDonation(
+  { search = "", limit = 20 }: { search?: string; limit?: number } = {}
+) {
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("members")
+    .select("id, member_id, full_name, phone, email, status")
+    .is("deleted_at", null)
+    .in("status", ["active", "inactive"])
+    .order("full_name", { ascending: true })
+    .limit(limit);
+
+  const term = sanitiseOrSearch(search);
+  if (term) {
+    query = query.or(
+      `full_name.ilike.%${term}%,member_id.ilike.%${term}%,phone.ilike.%${term}%`
+    );
+  }
+
+  const { data, error } = await query;
+  if (error) return [];
+
+  return ((data ?? []) as Member[]).map((member) => ({
+    id: member.id,
+    member_code: member.member_id,
+    full_name: member.full_name,
+    phone: member.phone,
+    email: member.email,
+  }));
 }
 
 export async function getAllAnnouncements({

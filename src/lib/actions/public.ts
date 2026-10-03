@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { donationSchema, contactRequestSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
 
@@ -41,11 +42,31 @@ export async function submitPublicDonation(
 
   const receiptNumber = `RCP-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
+  // Link the donation to a mosque member so event contribution tracking can
+  // recognise it. This has to be resolved server-side from the authenticated
+  // account: the public form carries no member field, so without this every
+  // self-service donation stored `member_id = NULL` and could never be matched
+  // to an event assignment. Matching is on the account link only -- never on the
+  // typed name -- and never taken from the request.
+  let memberId: string | null = null;
+  if (user?.id) {
+    const admin = await createAdminClient();
+    const { data: linked } = await admin
+      .from("members")
+      .select("id")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    memberId = (linked?.id as string | undefined) ?? null;
+  }
+
   const { error } = await supabase.from("donations").insert({
     donor_name: parsed.data.donor_name,
     donor_phone: parsed.data.donor_phone || null,
     donor_email: parsed.data.donor_email || null,
     fund_id: parsed.data.fund_id || null,
+    member_id: memberId,
     amount: parsed.data.amount,
     payment_method: parsed.data.payment_method,
     transaction_id: parsed.data.transaction_id || null,

@@ -1,6 +1,6 @@
 ﻿import { requirePermission } from "@/lib/access";
 import { Metadata } from "next";
-import { getAllEvents } from "@/lib/queries/admin";
+import { getAllEvents, getFunds } from "@/lib/queries/admin";
 import { PAGE_SIZE } from "@/constants";
 import { EventsClient } from "./events-client";
 
@@ -23,7 +23,10 @@ export default async function EventsPage({
   const event_type = params.event_type !== "__all__" ? params.event_type : undefined;
   const page = Number(params.page) || 1;
 
-  const result = await getAllEvents({ search, status, event_type, page, pageSize: PAGE_SIZE });
+  const [result, funds] = await Promise.all([
+    getAllEvents({ search, status, event_type, page, pageSize: PAGE_SIZE }),
+    getFunds(),
+  ]);
 
   return (
     <EventsClient
@@ -32,6 +35,7 @@ export default async function EventsPage({
       page={result.page}
       totalPages={result.totalPages}
       filters={{ search, status: params.status, event_type: params.event_type }}
+      funds={funds}
     />
   );
 }

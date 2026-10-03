@@ -34,6 +34,7 @@ import {
 import { PaginationBar } from "@/components/admin/pagination-bar";
 import { FilterBar } from "@/components/admin/filter-bar";
 import { StatusBadge } from "@/components/admin/status-badge";
+import { DonationMemberPicker } from "@/components/admin/donation-member-picker";
 import { PageActions } from "@/components/admin/page-actions";
 import { AdminTableWrapper } from "@/components/admin/table-wrapper";
 import {
@@ -334,6 +335,20 @@ export function DonationsClient({
                   </span>
                 }
               >
+                {d.status === "pending" && (
+                  <>
+                    <MobileActionButton
+                      label="Approve"
+                      success
+                      onClick={() => handleApprove(d)}
+                    >
+                      <Check className="h-4 w-4" />
+                    </MobileActionButton>
+                    <MobileActionButton label="Reject" onClick={() => setRejecting(d)}>
+                      <X className="h-4 w-4" />
+                    </MobileActionButton>
+                  </>
+                )}
                 <MobileActionButton label="Edit" onClick={() => openEdit(d)}>
                   <Pencil className="h-4 w-4" />
                 </MobileActionButton>
@@ -460,6 +475,26 @@ function DonationFormDialog({
 
   const watchPayment = watch("payment_method") as string;
 
+  // Held outside react-hook-form because it is an object (a member), and the
+  // form serialises entries as strings. Kept in sync into the form on submit.
+  const [linkedMember, setLinkedMember] = useState<DonationMemberOption | null>(null);
+
+  useEffect(() => {
+    if (open) {
+      setLinkedMember(
+        editing?.member_id
+          ? {
+              id: editing.member_id,
+              member_code: editing.member_code ?? "",
+              full_name: editing.member_name ?? "Linked member",
+              phone: null,
+              email: null,
+            }
+          : null
+      );
+    }
+  }, [open, editing]);
+
   useEffect(() => {
     if (open) {
       reset({
@@ -496,6 +531,11 @@ function DonationFormDialog({
     });
     fd.set("donation_date", values.donation_date || new Date().toISOString().split("T")[0]);
     fd.set("is_anonymous", anonymous ? "on" : "");
+    // Sent explicitly, including as an empty string, so clearing the link on an
+    // edit actually unlinks the donation instead of leaving the old value in
+    // place: the loop above skips empty values, which would make unlinking
+    // impossible.
+    fd.set("member_id", linkedMember?.id ?? "");
     startSubmitTransition(() => {
       formAction(fd);
     });
@@ -516,6 +556,11 @@ function DonationFormDialog({
           register={register("donor_name")}
           error={errors.donor_name?.message}
           required
+        />
+        <DonationMemberPicker
+          value={linkedMember}
+          onChange={setLinkedMember}
+          disabled={statePending}
         />
         <div className="grid grid-cols-2 gap-4">
           <FormInput

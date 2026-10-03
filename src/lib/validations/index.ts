@@ -51,6 +51,7 @@ export const donationSchema = z.object({
     .or(z.literal("")),
   donor_email: z.string().email("Please enter a valid email").optional().or(z.literal("")),
   fund_id: z.string().optional().nullable(),
+  member_id: z.string().optional().nullable(),
   amount: z.coerce.number().positive("Amount must be greater than 0"),
   payment_method: z.enum(paymentMethods),
   transaction_id: z.string().optional(),
@@ -135,6 +136,10 @@ export const eventSchema = z.object({
   title: z.string().min(2, "Title is required"),
   description: z.string().optional(),
   event_type: z.string().min(1, "Event type is required"),
+  fund_id: z.string().optional().nullable(),
+  contribution_amount: z.coerce.number().min(0).optional().nullable(),
+  contribution_start_date: z.string().optional(),
+  contribution_due_date: z.string().optional(),
   start_date: z.string().min(1, "Start date is required"),
   end_date: z.string().optional(),
   start_time: z.string().optional(),
@@ -145,6 +150,54 @@ export const eventSchema = z.object({
   registration_enabled: z.boolean().default(false),
   status: z.enum(["draft", "published", "cancelled", "completed"]),
   featured: z.boolean().default(false),
+});
+
+export const eventMemberSchema = z.object({
+  event_id: z.string().min(1, "Event is required"),
+  member_id: z.string().min(1, "Member is required"),
+  assigned_amount: z.coerce.number().min(0, "Assigned amount cannot be negative"),
+});
+
+/** Bulk assign: member ids arrive as repeated form fields. */
+export const eventMemberBulkSchema = z.object({
+  event_id: z.string().min(1, "Event is required"),
+  member_ids: z.array(z.string().min(1)).min(1, "Select at least one member"),
+  assigned_amount: z.coerce
+    .number()
+    .min(0, "Assigned amount cannot be negative")
+    .optional(),
+});
+
+/**
+ * Per-member override of the event's default per-head amount.
+ *
+ * Strictly positive: an override has to be a real target. Clearing an override
+ * back to the event default goes through the same action with the event's own
+ * per-head value, so there is no way to store a meaningless zero here.
+ */
+export const eventMemberAmountSchema = z.object({
+  event_id: z.string().min(1, "Event is required"),
+  member_id: z.string().min(1, "Member is required"),
+  assigned_amount: z.coerce
+    .number({ invalid_type_error: "Assigned amount must be a number" })
+    .positive("Assigned amount must be greater than 0")
+    .max(99999999, "Assigned amount is too large")
+    .refine((value) => Number.isFinite(value), "Assigned amount must be a number"),
+});
+
+export const reminderEmailSchema = z.object({
+  event_id: z.string().min(1, "Event is required"),
+  member_id: z.string().min(1, "Member is required"),
+  recipient_email: z.string().email("Please enter a valid email address"),
+  subject: z.string().min(2, "Subject is required"),
+  message: z.string().min(10, "Message is required"),
+});
+
+/** Guard against a bulk send being pointed at a non-existent event. */
+export const bulkReminderSchema = z.object({
+  event_id: z.string().min(1, "Event is required"),
+  subject: z.string().min(2, "Subject is required"),
+  message: z.string().min(10, "Message is required"),
 });
 
 export const announcementSchema = z.object({

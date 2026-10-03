@@ -185,12 +185,14 @@ export function MobileActionButton({
   label,
   onClick,
   destructive,
+  success,
   disabled,
   children,
 }: {
   label: string;
   onClick: () => void;
   destructive?: boolean;
+  success?: boolean;
   disabled?: boolean;
   children: React.ReactNode;
 }) {
@@ -205,10 +207,12 @@ export function MobileActionButton({
       }}
       disabled={disabled}
       className={cn(
-        "rounded-md p-1.5 text-muted-foreground",
-        destructive
-          ? "hover:bg-destructive/10 hover:text-destructive"
-          : "hover:bg-muted hover:text-foreground",
+        "rounded-md p-1.5",
+        success
+          ? "text-green-600 hover:bg-green-50"
+          : destructive
+            ? "text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground",
         disabled && "pointer-events-none opacity-50"
       )}
     >

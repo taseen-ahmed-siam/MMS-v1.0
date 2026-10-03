@@ -124,6 +124,10 @@ export interface Event {
   slug: string;
   description: string | null;
   event_type: string;
+  fund_id: string | null;
+  contribution_amount: number | null;
+  contribution_start_date: string | null;
+  contribution_due_date: string | null;
   start_date: string;
   end_date: string | null;
   start_time: string | null;
@@ -138,6 +142,56 @@ export interface Event {
   created_at: string;
   updated_at: string;
   created_by: string | null;
+}
+
+export interface EventMember {
+  id: string;
+  event_id: string;
+  member_id: string;
+  assigned_amount: number;
+  created_at: string;
+  created_by: string | null;
+}
+
+export interface EventMemberContribution {
+  event_id: string;
+  member_id: string;
+  member_code: string | null;
+  member_name: string;
+  phone: string | null;
+  email: string | null;
+  assigned_amount: number;
+  paid_amount: number;
+  remaining_amount: number;
+  /** Derived from `paid_amount >= assigned_amount`, never stored. */
+  status: 'completed' | 'incomplete';
+  /** Finer-grained view used by the optional table filter. */
+  payment_stage: 'paid' | 'partial' | 'unpaid';
+  /** True when this member's assigned amount differs from the event's per-head. */
+  is_override: boolean;
+  approved_donations: Donation[];
+  last_reminder: ContributionReminderEmail | null;
+}
+
+/** Per-recipient outcome of a bulk reminder run. */
+export interface BulkReminderRecipientResult {
+  member_id: string;
+  member_name: string;
+  email: string | null;
+  status: 'sent' | 'failed' | 'skipped';
+  error?: string;
+}
+
+export interface ContributionReminderEmail {
+  id: string;
+  event_id: string;
+  member_id: string;
+  recipient_email: string;
+  subject: string;
+  message: string;
+  sent_by: string | null;
+  sent_at: string;
+  status: 'sent' | 'failed';
 }
 
 export interface Khutbah {
@@ -262,6 +316,7 @@ export interface Donation {
   donor_phone: string | null;
   donor_email: string | null;
   fund_id: string | null;
+  member_id: string | null;
   amount: number;
   payment_method: 'cash' | 'bank_transfer' | 'bkash' | 'nagad' | 'rocket' | 'card' | 'other';
   transaction_id: string | null;
@@ -275,6 +330,8 @@ export interface Donation {
   created_by: string | null;
   user_id: string | null;
   deleted_at: string | null;
+  /** Joined from `members` so a linked donation can show whose it is. */
+  members?: { full_name: string; member_id: string } | null;
 }
 
 export interface Income {

@@ -5,13 +5,13 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Pencil, Trash2 } from "lucide-react";
+import { BarChart3, Pencil, Trash2 } from "lucide-react";
 import { z } from "zod";
 import { eventSchema } from "@/lib/validations";
 import { createEvent, updateEvent, deleteEvent } from "@/lib/actions/admin";
 import { EVENT_TYPES, EVENT_STATUSES } from "@/constants";
-import { formatDate } from "@/lib/utils/format";
-import type { Event } from "@/types/database";
+import { formatCurrency, formatDate } from "@/lib/utils/format";
+import type { DonationFund, Event } from "@/types/database";
 import { DataTable, type Column } from "@/components/admin/data-table";
 import {
   DesktopTableOnly,
@@ -35,6 +35,7 @@ import { FormTextarea } from "@/components/forms/form-textarea";
 import { FormSubmitButton } from "@/components/forms/form-submit-button";
 import { ConfirmDialog } from "@/components/forms/confirm-dialog";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 type FormData = z.input<typeof eventSchema>;
 
@@ -44,12 +45,17 @@ interface EventsClientProps {
   page: number;
   totalPages: number;
   filters: { search: string; status?: string; event_type?: string };
+  funds: DonationFund[];
 }
 
 const defaultValues: FormData = {
   title: "",
   description: "",
   event_type: "",
+  fund_id: null,
+  contribution_amount: null,
+  contribution_start_date: "",
+  contribution_due_date: "",
   start_date: "",
   end_date: "",
   start_time: "",
@@ -62,7 +68,7 @@ const defaultValues: FormData = {
   featured: false,
 };
 
-export function EventsClient({ data, total, page, totalPages, filters }: EventsClientProps) {
+export function EventsClient({ data, total, page, totalPages, filters, funds }: EventsClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -133,6 +139,10 @@ export function EventsClient({ data, total, page, totalPages, filters }: EventsC
       title: item.title,
       description: item.description ?? "",
       event_type: item.event_type,
+      fund_id: item.fund_id,
+      contribution_amount: item.contribution_amount,
+      contribution_start_date: item.contribution_start_date ?? "",
+      contribution_due_date: item.contribution_due_date ?? "",
       start_date: item.start_date,
       end_date: item.end_date ?? "",
       start_time: item.start_time ?? "",
@@ -199,11 +209,30 @@ export function EventsClient({ data, total, page, totalPages, filters }: EventsC
     { key: "venue", header: "Venue", cell: (row) => (
       <span className="text-sm text-muted-foreground">{row.venue || "—"}</span>
     )},
+    { key: "contribution_amount", header: "Contribution", cell: (row) => (
+      Number(row.contribution_amount) > 0 ? (
+        <div>
+          <p className="text-sm tabular-nums">{formatCurrency(Number(row.contribution_amount))}</p>
+          <p className="text-xs text-muted-foreground">per head</p>
+        </div>
+      ) : (
+        <span className="text-sm text-muted-foreground">—</span>
+      )
+    )},
     { key: "status", header: "Status", cell: (row) => (
       <StatusBadge status={row.status} statuses={[...EVENT_STATUSES]} />
     )},
     { key: "actions", header: "", cell: (row) => (
       <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          title="Contribution tracking"
+          aria-label="Contribution tracking"
+          onClick={(e) => { e.stopPropagation(); router.push(`/admin/events/${row.id}`); }}
+        >
+          <BarChart3 className="h-4 w-4" />
+        </Button>
         <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); openEdit(row); }}>
           <Pencil className="h-4 w-4" />
         </Button>
@@ -211,7 +240,7 @@ export function EventsClient({ data, total, page, totalPages, filters }: EventsC
           <Trash2 className="h-4 w-4 text-destructive" />
         </Button>
       </div>
-    ), className: "w-24" },
+    ), className: "w-32" },
   ];
 
   return (
@@ -254,10 +283,19 @@ export function EventsClient({ data, total, page, totalPages, filters }: EventsC
               />
               <MobileMetaGrid columns={3}>
                 <MobileMetaTile label="Date" value={row.start_date ? formatDate(row.start_date) : "—"} />
-                <MobileMetaTile label="Time" value={row.start_time || "—"} />
                 <MobileMetaTile label="Venue" value={row.venue || "—"} />
+                <MobileMetaTile
+                  label="Per Head"
+                  value={Number(row.contribution_amount) > 0 ? formatCurrency(Number(row.contribution_amount)) : "—"}
+                />
               </MobileMetaGrid>
               <MobileRecordFooter>
+                <MobileActionButton
+                  label="Contribution tracking"
+                  onClick={() => router.push(`/admin/events/${row.id}`)}
+                >
+                  <BarChart3 className="h-4 w-4" />
+                </MobileActionButton>
                 <MobileActionButton label="Edit" onClick={() => openEdit(row)}>
                   <Pencil className="h-4 w-4" />
                 </MobileActionButton>
@@ -270,7 +308,11 @@ export function EventsClient({ data, total, page, totalPages, filters }: EventsC
         />
 
         <DesktopTableOnly>
-          <DataTable columns={columns} data={data} />
+          <DataTable
+            columns={columns}
+            data={data}
+            onRowClick={(row) => router.push(`/admin/events/${row.id}`)}
+          />
         </DesktopTableOnly>
       </AdminTableWrapper>
 
@@ -365,6 +407,63 @@ export function EventsClient({ data, total, page, totalPages, filters }: EventsC
               options={EVENT_STATUSES.map((s) => ({ value: s.value, label: s.label }))}
               error={form.formState.errors.status?.message}
             />
+          </div>
+          <div className="space-y-3 rounded-xl border border-black/[0.06] bg-black/[0.02] p-3">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Contribution Tracking</p>
+              <p className="text-xs text-muted-foreground">
+                Link an existing fund so approved payments to that fund count towards each
+                member&apos;s contribution. The fund stays the financial record.
+              </p>
+            </div>
+            <FormSelect
+              label="Linked Fund"
+              name="fund_id"
+              value={form.watch("fund_id") ?? "none"}
+              onValueChange={(v) => form.setValue("fund_id", v === "none" ? null : v)}
+              options={[
+                { value: "none", label: "No linked fund" },
+                ...funds.map((fund) => ({ value: fund.id, label: fund.name })),
+              ]}
+              placeholder="Select a fund"
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormInput
+                label="Per Head Contribution"
+                name="contribution_amount"
+                type="number"
+                min={0}
+                step="0.01"
+                register={form.register("contribution_amount", {
+                  setValueAs: (value) => (value === "" || value === "-" ? null : Number(value)),
+                })}
+                error={form.formState.errors.contribution_amount?.message}
+              />
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">Expected Collection</Label>
+                <p className="rounded-md border border-black/[0.06] bg-white px-3 py-2 text-sm font-semibold text-foreground">
+                  Assigned members × {formatCurrency(Number(form.watch("contribution_amount") || 0))}
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <FormInput
+                label="Contribution Start"
+                name="contribution_start_date"
+                type="date"
+                register={form.register("contribution_start_date")}
+              />
+              <FormInput
+                label="Contribution Due Date"
+                name="contribution_due_date"
+                type="date"
+                register={form.register("contribution_due_date")}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Expected collection is calculated automatically from the members assigned on the
+              event&apos;s contribution page.
+            </p>
           </div>
           <FormTextarea
             label="Description"

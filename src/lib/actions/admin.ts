@@ -14,6 +14,10 @@ import {
   committeeMemberSchema,
   staffSchema,
   eventSchema,
+  eventMemberBulkSchema,
+  eventMemberAmountSchema,
+  reminderEmailSchema,
+  bulkReminderSchema,
   announcementSchema,
   khutbahSchema,
   assetSchema,
@@ -27,7 +31,13 @@ import {
 } from "@/lib/validations";
 import { slugify } from "@/lib/utils/format";
 import { getCurrentAccess, isAdminRole } from "@/lib/access";
-import type { Expense } from "@/types/database";
+import { buildReminderHtml, sendReminderEmail } from "@/lib/email";
+import {
+  findUnknownPlaceholders,
+  isDeliverableEmail,
+  renderReminderTemplate,
+} from "@/lib/reminders";
+import type { BulkReminderRecipientResult, Expense } from "@/types/database";
 
 type ActionResult = { error?: string; success?: boolean; id?: string; warning?: string };
 
@@ -857,6 +867,9 @@ export async function createEvent(
   const parsed = eventSchema.safeParse({
     ...raw,
     capacity: raw.capacity ? Number(raw.capacity) : null,
+    contribution_amount: emptyToNull(raw.contribution_amount as string)
+      ? Number(raw.contribution_amount)
+      : null,
     registration_enabled: raw.registration_enabled === "on",
     featured: raw.featured === "on",
   });
@@ -871,6 +884,8 @@ export async function createEvent(
       end_date: emptyToNull(parsed.data.end_date),
       start_time: emptyToNull(parsed.data.start_time),
       end_time: emptyToNull(parsed.data.end_time),
+      contribution_start_date: emptyToNull(parsed.data.contribution_start_date),
+      contribution_due_date: emptyToNull(parsed.data.contribution_due_date),
       slug: await ensureUniqueSlug("events", slugify(parsed.data.title)),
       created_by: userId,
     })
@@ -897,6 +912,9 @@ export async function updateEvent(
   const parsed = eventSchema.safeParse({
     ...raw,
     capacity: raw.capacity ? Number(raw.capacity) : null,
+    contribution_amount: emptyToNull(raw.contribution_amount as string)
+      ? Number(raw.contribution_amount)
+      : null,
     registration_enabled: raw.registration_enabled === "on",
     featured: raw.featured === "on",
   });
@@ -910,6 +928,8 @@ export async function updateEvent(
       end_date: emptyToNull(parsed.data.end_date),
       start_time: emptyToNull(parsed.data.start_time),
       end_time: emptyToNull(parsed.data.end_time),
+      contribution_start_date: emptyToNull(parsed.data.contribution_start_date),
+      contribution_due_date: emptyToNull(parsed.data.contribution_due_date),
 slug: await ensureUniqueSlug("events", slugify(parsed.data.title), id),
     })
     .eq("id", id);
@@ -932,6 +952,512 @@ export async function deleteEvent(formData: FormData) {
 
   revalidatePath("/admin/events");
   return { success: true };
+}
+
+// ============================================================
+// EVENT CONTRIBUTION TRACKING
+// ============================================================
+
+/**
+ * Assign members to an event. The amount comes from the event's per-head
+ * contribution unless the admin overrides it here, and `onConflict` ignores
+ * members that are already assigned so a double submit cannot fail the batch.
+ */
+export async function addEventMembers(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("event.manage")) {
+    return { error: "You are not allowed to manage event members" };
+  }
+
+  const parsed = eventMemberBulkSchema.safeParse({
+    event_id: formData.get("event_id"),
+    member_ids: formData.getAll("member_ids").map(String).filter(Boolean),
+    assigned_amount: emptyToNull(formData.get("assigned_amount") as string),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message };
+
+  const supabase = await createAdminClient();
+  const userId = await getCurrentUserId();
+
+  const { data: event } = await supabase
+    .from("events")
+    .select("contribution_amount")
+    .eq("id", parsed.data.event_id)
+    .maybeSingle();
+
+  const assignedAmount =
+    parsed.data.assigned_amount ?? Number(event?.contribution_amount ?? 0) ?? 0;
+
+  const { data, error } = await supabase
+    .from("event_members")
+    .upsert(
+      parsed.data.member_ids.map((memberId) => ({
+        event_id: parsed.data.event_id,
+        member_id: memberId,
+        assigned_amount: assignedAmount,
+        created_by: userId,
+      })),
+      { onConflict: "event_id,member_id", ignoreDuplicates: true }
+    )
+    .select("member_id");
+
+  if (error) return { error: error.message };
+
+  const addedCount = data?.length ?? 0;
+
+  logAudit({
+    action: "add_members",
+    module: "event",
+    entity: "event_members",
+    entityId: parsed.data.event_id,
+    newData: { member_ids: parsed.data.member_ids, assigned_amount: assignedAmount },
+  });
+
+  revalidatePath(`/admin/events/${parsed.data.event_id}`);
+  revalidatePath("/admin/events");
+
+  return {
+    success: true,
+    count: addedCount,
+    message:
+      addedCount > 0
+        ? `${addedCount} member${addedCount === 1 ? "" : "s"} assigned`
+        : "Those members are already assigned to this event",
+  };
+}
+
+/** Remove an assignment. Already-approved payments are never touched. */
+export async function removeEventMember(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("event.manage")) {
+    return { error: "You are not allowed to manage event members" };
+  }
+
+  const eventId = String(formData.get("event_id") ?? "");
+  const memberId = String(formData.get("member_id") ?? "");
+  if (!eventId || !memberId) return { error: "Missing event or member" };
+
+  const supabase = await createAdminClient();
+  const { data: existing } = await supabase
+    .from("event_members")
+    .select("id, assigned_amount")
+    .eq("event_id", eventId)
+    .eq("member_id", memberId)
+    .maybeSingle();
+
+  const { error } = await supabase
+    .from("event_members")
+    .delete()
+    .eq("event_id", eventId)
+    .eq("member_id", memberId);
+  if (error) return { error: error.message };
+
+  logAudit({
+    action: "remove_member",
+    module: "event",
+    entity: "event_members",
+    entityId: existing?.id,
+    oldData: { event_id: eventId, member_id: memberId, assigned_amount: existing?.assigned_amount },
+  });
+
+  revalidatePath(`/admin/events/${eventId}`);
+  revalidatePath("/admin/events");
+  return { success: true };
+}
+
+/** Per-member override of the default per-head amount (e.g. a family giving double). */
+export async function updateEventMemberAmount(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("event.manage")) {
+    return { error: "You are not allowed to manage event members" };
+  }
+
+  const parsed = eventMemberAmountSchema.safeParse({
+    event_id: formData.get("event_id"),
+    member_id: formData.get("member_id"),
+    assigned_amount: formData.get("assigned_amount"),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message };
+
+  const supabase = await createAdminClient();
+  const { data: old, error: readError } = await supabase
+    .from("event_members")
+    .select("assigned_amount")
+    .eq("event_id", parsed.data.event_id)
+    .eq("member_id", parsed.data.member_id)
+    .maybeSingle();
+  if (readError) return { error: readError.message };
+
+  // An assignment only exists if the member was assigned to this event. Without
+  // this check a tampered member_id updates zero rows yet still reports success
+  // and writes an audit row for a change that never happened.
+  if (!old) {
+    return { error: "This member is not assigned to the event." };
+  }
+
+  const { data: updated, error } = await supabase
+    .from("event_members")
+    .update({ assigned_amount: parsed.data.assigned_amount })
+    .eq("event_id", parsed.data.event_id)
+    .eq("member_id", parsed.data.member_id)
+    .select("assigned_amount")
+    .maybeSingle();
+  if (error) return { error: error.message };
+  if (!updated) return { error: "Unable to save the amount. Please try again." };
+
+  logAudit({
+    action: "update_member_amount",
+    module: "event",
+    entity: "event_members",
+    entityId: `${parsed.data.event_id}:${parsed.data.member_id}`,
+    oldData: {
+      event_id: parsed.data.event_id,
+      member_id: parsed.data.member_id,
+      assigned_amount: old.assigned_amount,
+    },
+    newData: {
+      event_id: parsed.data.event_id,
+      member_id: parsed.data.member_id,
+      assigned_amount: updated.assigned_amount,
+    },
+  });
+
+  revalidatePath(`/admin/events/${parsed.data.event_id}`);
+  return { success: true, member_id: parsed.data.member_id, assigned_amount: parsed.data.assigned_amount };
+}
+
+/**
+ * Send a contribution reminder to one assigned member.
+ *
+ * Everything that reaches the member is re-derived server-side from the event
+ * and the member row: the recipient address, the assigned amount, the paid
+ * amount (approved donations only) and the due date. The admin only controls the
+ * subject and the message wording, so a tampered form cannot leak another
+ * member's figures or redirect the mail.
+ */
+export async function sendContributionReminder(
+  _prev: ActionResult,
+  formData: FormData
+): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!access.has("event.manage")) {
+    return { error: "You are not allowed to send contribution reminders" };
+  }
+
+  const eventId = String(formData.get("event_id") ?? "");
+  const memberId = String(formData.get("member_id") ?? "");
+  if (!eventId || !memberId) return { error: "Missing event or member" };
+
+  const supabase = await createAdminClient();
+  const userId = await getCurrentUserId();
+
+  const { data: event } = await supabase
+    .from("events")
+    .select("id, title, contribution_due_date, fund_id")
+    .eq("id", eventId)
+    .maybeSingle();
+  if (!event) return { error: "Event not found" };
+
+  const { data: member } = await supabase
+    .from("members")
+    .select("id, full_name, email")
+    .eq("id", memberId)
+    .maybeSingle();
+  if (!member) return { error: "Member not found" };
+  if (!member.email) {
+    return { error: "This member has no email address on their profile" };
+  }
+
+  // Reuse the single derivation the table uses so the email can never disagree
+  // with what the admin is looking at.
+  const { getEventContributionRows } = await import("@/lib/queries/admin");
+  const row = (await getEventContributionRows(eventId)).find(
+    (item) => item.member_id === memberId
+  );
+  if (!row) return { error: "This member is not assigned to the event" };
+
+  const parsed = reminderEmailSchema.safeParse({
+    event_id: eventId,
+    member_id: memberId,
+    recipient_email: member.email,
+    subject: formData.get("subject"),
+    message: formData.get("message"),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message };
+
+  const { data: settings } = await supabase
+    .from("mosque_settings")
+    .select("mosque_name, logo_url, address, phone")
+    .limit(1)
+    .maybeSingle();
+
+  const mosqueName = settings?.mosque_name || "Al-Noor Mosque";
+  const details = {
+    memberName: member.full_name,
+    eventName: event.title,
+    assignedAmount: row.assigned_amount,
+    paidAmount: row.paid_amount,
+    remainingAmount: row.remaining_amount,
+    dueDate: event.contribution_due_date,
+    mosqueName,
+    mosqueAddress: settings?.address ?? null,
+    mosquePhone: settings?.phone ?? null,
+    logoUrl: settings?.logo_url ?? null,
+    adminMessage: parsed.data.message,
+  };
+
+  try {
+    await sendReminderEmail({
+      to: member.email,
+      subject: parsed.data.subject,
+      html: buildReminderHtml(details),
+      text: parsed.data.message,
+    });
+  } catch (error) {
+    // Keep the failed attempt on record so the admin knows a reminder was tried,
+    // but never surface transport internals to the browser.
+    await supabase.from("contribution_reminder_emails").insert({
+      event_id: eventId,
+      member_id: memberId,
+      recipient_email: member.email,
+      subject: parsed.data.subject,
+      message: parsed.data.message,
+      sent_by: userId,
+      status: "failed",
+    });
+
+    console.error("[event-reminder] send failed", error);
+    return { error: "Unable to send email. Please try again." };
+  }
+
+  await supabase.from("contribution_reminder_emails").insert({
+    event_id: eventId,
+    member_id: memberId,
+    recipient_email: member.email,
+    subject: parsed.data.subject,
+    message: parsed.data.message,
+    sent_by: userId,
+    status: "sent",
+  });
+
+  logAudit({
+    action: "send_reminder",
+    module: "event",
+    entity: "contribution_reminder_emails",
+    entityId: eventId,
+    newData: {
+      member_id: memberId,
+      member_name: member.full_name,
+      recipient_email: member.email,
+      subject: parsed.data.subject,
+    },
+  });
+
+  revalidatePath(`/admin/events/${eventId}`);
+  return { success: true, id: member.email };
+}
+
+/** How many reminders one server action call will deliver. */
+const BULK_REMINDER_BATCH_SIZE = 10;
+
+/**
+ * Send contribution reminders to every incomplete member of an event.
+ *
+ * Recipients are chosen entirely on the server from the derived contribution
+ * rows, so a tampered request cannot reach a completed member and cannot invent
+ * a recipient. Each recipient gets their own individually resolved message and
+ * their own `sendMail` call: never one message addressed to everyone.
+ *
+ * Work is split into bounded batches because one server action invocation has to
+ * finish inside the platform timeout, and 290 sequential SMTP handshakes will
+ * not. Resumption uses an `after_member_id` cursor over a member_id-ordered queue
+ * rather than a numeric offset: if someone completes their contribution between
+ * batches the queue shrinks, and an offset would then skip a member and email
+ * another one twice.
+ */
+export async function sendBulkContributionReminders(formData: FormData) {
+  const access = await getCurrentAccess();
+  if (!access.has("event.manage")) {
+    return { error: "You are not allowed to send contribution reminders" };
+  }
+
+  const parsed = bulkReminderSchema.safeParse({
+    event_id: formData.get("event_id"),
+    subject: formData.get("subject"),
+    message: formData.get("message"),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message };
+
+  const { event_id: eventId, subject: subjectTemplate, message: messageTemplate } = parsed.data;
+
+  // A typo in a placeholder would otherwise be mailed to every recipient.
+  const unknown = [
+    ...findUnknownPlaceholders(subjectTemplate),
+    ...findUnknownPlaceholders(messageTemplate),
+  ];
+  if (unknown.length) {
+    return {
+      error: `Unknown placeholder${unknown.length > 1 ? "s" : ""}: ${unknown
+        .map((name) => `{{${name}}}`)
+        .join(", ")}. Remove ${unknown.length > 1 ? "them" : "it"} before sending.`,
+    };
+  }
+
+  const supabase = createAdminClient();
+  const userId = await getCurrentUserId();
+
+  const { data: event } = await supabase
+    .from("events")
+    .select("id, title, contribution_due_date, fund_id")
+    .eq("id", eventId)
+    .maybeSingle();
+  if (!event) return { error: "Event not found" };
+
+  // Only Incomplete members are ever considered, and each is re-derived from
+  // approved donations on every batch so a member who completed mid-run is
+  // skipped rather than emailed.
+  const { getEventContributionRows } = await import("@/lib/queries/admin");
+  const rows = await getEventContributionRows(eventId);
+
+  const incomplete = rows
+    .filter((row) => row.status === "incomplete")
+    // Stable queue order, so the cursor below can never repeat or skip anyone.
+    .sort((a, b) => a.member_id.localeCompare(b.member_id));
+  if (!incomplete.length) {
+    return { error: "All assigned members have completed their contribution." };
+  }
+
+  // Resume strictly after the last member of the previous batch. Compared by id
+  // rather than by index: the incomplete set can shrink mid-run, and a positional
+  // cursor would then skip one member and email another twice.
+  const afterMemberId = String(formData.get("after_member_id") ?? "");
+  const startIndex = afterMemberId
+    ? incomplete.filter((row) => row.member_id.localeCompare(afterMemberId) <= 0).length
+    : 0;
+
+  const { data: settings } = await supabase
+    .from("mosque_settings")
+    .select("mosque_name, logo_url, address, phone")
+    .limit(1)
+    .maybeSingle();
+
+  const mosqueName = settings?.mosque_name || "Al-Noor Mosque";
+  const batch = incomplete.slice(startIndex, startIndex + BULK_REMINDER_BATCH_SIZE);
+
+  const results: BulkReminderRecipientResult[] = [];
+
+  for (const row of batch) {
+    const base = {
+      member_id: row.member_id,
+      member_name: row.member_name,
+      email: row.email,
+    };
+
+    // Missing or malformed address: skip this recipient, never fail the batch.
+    if (!isDeliverableEmail(row.email)) {
+      results.push({ ...base, status: "skipped" });
+      continue;
+    }
+
+    const details = {
+      memberName: row.member_name,
+      eventName: event.title,
+      assignedAmount: row.assigned_amount,
+      paidAmount: row.paid_amount,
+      remainingAmount: row.remaining_amount,
+      dueDate: event.contribution_due_date,
+      mosqueName,
+    };
+    const message = renderReminderTemplate(messageTemplate, details);
+    const subject = renderReminderTemplate(subjectTemplate, details);
+
+    let outcome: BulkReminderRecipientResult["status"] = "failed";
+
+    try {
+      await sendReminderEmail({
+        to: row.email,
+        subject,
+        html: buildReminderHtml({
+          ...details,
+          mosqueAddress: settings?.address ?? null,
+          mosquePhone: settings?.phone ?? null,
+          logoUrl: settings?.logo_url ?? null,
+          adminMessage: message,
+        }),
+        text: message,
+      });
+      outcome = "sent";
+    } catch (error) {
+      console.error(`[event-bulk-reminder] send failed for member ${row.member_id}`, error);
+    }
+
+    // One history row per attempt, exactly like the single-member path. Written
+    // after the send so the recorded status always matches what happened.
+    results.push({ ...base, status: outcome });
+    await supabase.from("contribution_reminder_emails").insert({
+      event_id: eventId,
+      member_id: row.member_id,
+      recipient_email: row.email,
+      subject,
+      message,
+      sent_by: userId,
+      status: outcome,
+    });
+  }
+
+  const sent = results.filter((r) => r.status === "sent").length;
+  const failed = results.filter((r) => r.status === "failed").length;
+  const skipped = results.filter((r) => r.status === "skipped").length;
+  const total = incomplete.length;
+
+  // A member that completed after this batch was already taken still counts as
+  // processed: it was addressed, and its absence from the next batch is correct.
+  const lastProcessed = batch[batch.length - 1];
+  const nextCursor = lastProcessed?.member_id ?? afterMemberId;
+  const remainingAfter =
+    total - incomplete.filter((row) => row.member_id.localeCompare(nextCursor) <= 0).length;
+  const hasMore = remainingAfter > 0;
+
+  // Audited once, when the queue drains, so a 290-recipient send does not leave
+  // 29 near-identical audit rows behind.
+  //
+  // The action only ever holds one batch, so the run totals are supplied by the
+  // caller, which accumulates them across batches. They are clamped to
+  // non-negative integers here, and still reported alongside this batch's own
+  // counts, so a mistyped client cannot record a negative or fractional send.
+  if (!hasMore) {
+    const readCount = (key: string) => {
+      const parsed = Number.parseInt(String(formData.get(key) ?? ""), 10);
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    };
+    logAudit({
+      action: "send_bulk_reminders",
+      module: "event",
+      entity: "contribution_reminder_emails",
+      entityId: eventId,
+      newData: {
+        event_id: eventId,
+        event_title: event.title,
+        incomplete_total: total,
+        attempted: readCount("run_processed"),
+        sent: readCount("run_sent"),
+        failed: readCount("run_failed"),
+        skipped_no_email: readCount("run_skipped"),
+        batches_run: Number(formData.get("batch_number") ?? "0") + 1,
+      },
+    });
+  }
+
+  revalidatePath(`/admin/events/${eventId}`);
+
+  return {
+    success: true,
+    results,
+    stats: { sent, failed, skipped, processed: results.length, total },
+    cursor: nextCursor,
+    hasMore,
+    remaining: remainingAfter,
+  };
 }
 
 // ============================================================

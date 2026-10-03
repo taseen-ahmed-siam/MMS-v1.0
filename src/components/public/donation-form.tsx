@@ -36,7 +36,7 @@ export function DonationForm({ funds, settings }: DonationFormProps) {
     resolver: zodResolver(donationSchema) as never,
   });
 
-  const didScroll = useRef(false);
+  const successRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
 
   const paymentMethod = watch("payment_method") as string;
@@ -75,14 +75,15 @@ export function DonationForm({ funds, settings }: DonationFormProps) {
   };
 
   useEffect(() => {
-    if (state.success && !didScroll.current) {
-      didScroll.current = true;
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    if (!state.success) return;
+    const anchor = successRef.current;
+    if (!anchor) return;
+    anchor.scrollIntoView({ behavior: "smooth", block: "center" });
   }, [state.success]);
 
   if (state.success) {
-    return (      <div className="text-center py-10">
+    return (
+      <div ref={successRef} className="text-center py-10 sm:py-12">
         <div className="h-16 w-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
           <HandCoins className="h-8 w-8 text-success" />
         </div>
