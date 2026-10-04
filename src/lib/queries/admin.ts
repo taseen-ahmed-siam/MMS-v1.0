@@ -212,10 +212,29 @@ export async function getRecentActivity(limit = 5) {
   return (data as AuditLog[]) ?? [];
 }
 
+/**
+ * Funds that at least one still-collecting event is tracking. Used to warn an
+ * admin that approving an unlinked donation to one of these funds will not
+ * advance any member's contribution, instead of letting that pass silently.
+ */
+export async function getEventLinkedFundIds(): Promise<string[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("events")
+    .select("fund_id")
+    .in("status", ["draft", "published"])
+    .not("fund_id", "is", null);
+
+  return Array.from(
+    new Set((data ?? []).map((row) => row.fund_id as string).filter(Boolean))
+  );
+}
+
 export async function getDonations({
   search = "",
   status,
   fundId,
+  linked,
   from,
   to,
   page = 1,
@@ -224,6 +243,7 @@ export async function getDonations({
   search?: string;
   status?: string;
   fundId?: string;
+  linked?: string;
   from?: string;
   to?: string;
   page?: number;
@@ -237,11 +257,18 @@ export async function getDonations({
     })
     .is("deleted_at", null);
 
-  if (search) {
-    query = query.or(`donor_name.ilike.%${search}%,donor_phone.ilike.%${search}%,receipt_number.ilike.%${search}%`);
+  // Sanitised before it reaches the `.or()` filter string: PostgREST parses that
+  // string, so raw input could inject extra filters (`,` chains, `not.is.null`).
+  const searchTerm = sanitiseOrSearch(search);
+  if (searchTerm) {
+    query = query.or(
+      `donor_name.ilike.%${searchTerm}%,donor_phone.ilike.%${searchTerm}%,receipt_number.ilike.%${searchTerm}%`
+    );
   }
   if (status) query = query.eq("status", status);
   if (fundId) query = query.eq("fund_id", fundId);
+  if (linked === "unlinked") query = query.is("member_id", null);
+  if (linked === "linked") query = query.not("member_id", "is", null);
   if (from) query = query.gte("donation_date", from);
   if (to) query = query.lte("donation_date", to);
 

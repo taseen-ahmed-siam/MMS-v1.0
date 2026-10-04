@@ -64,9 +64,12 @@ const initialState: ActionResult = {};
 interface DonationsClientProps {
   donations: DonationRow[];
   funds: DonationFund[];
+  /** Funds tracked by a still-collecting event; approving into these needs a member. */
+  eventFundIds: string[];
   initialSearch: string;
   initialStatus: string;
   initialFundId: string;
+  initialLinked: string;
   page: number;
   total: number;
   totalPages: number;
@@ -76,9 +79,11 @@ interface DonationsClientProps {
 export function DonationsClient({
   donations,
   funds,
+  eventFundIds,
   initialSearch,
   initialStatus,
   initialFundId,
+  initialLinked,
   page,
   total,
   totalPages,
@@ -89,11 +94,14 @@ export function DonationsClient({
   const [search, setSearch] = useState(initialSearch);
   const [status, setStatus] = useState(initialStatus);
   const [fundFilter, setFundFilter] = useState(initialFundId);
+  const [linkedFilter, setLinkedFilter] = useState(initialLinked);
   const [dialogOpen, setDialogOpen] = useState(autoOpenCreate);
   const [editing, setEditing] = useState<Donation | null>(null);
   const [deleting, setDeleting] = useState<Donation | null>(null);
   const [deletePending, setDeletePending] = useState(false);
   const [rejecting, setRejecting] = useState<Donation | null>(null);
+  const [approveUnlinked, setApproveUnlinked] = useState<Donation | null>(null);
+  const [approvePending, setApprovePending] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [rejectPending, setRejectPending] = useState(false);
 
@@ -108,9 +116,10 @@ export function DonationsClient({
     if (search) params.set("search", search);
     if (status) params.set("status", status);
     if (fundFilter) params.set("fund", fundFilter);
+    if (linkedFilter) params.set("linked", linkedFilter);
     const qs = params.toString();
     router.push(qs ? `?${qs}` : "?");
-  }, [search, status, fundFilter, router]);
+  }, [search, status, fundFilter, linkedFilter, router]);
 
   useEffect(() => {
     const t = setTimeout(() => setSearch(searchInput), 350);
@@ -134,15 +143,28 @@ export function DonationsClient({
   };
 
   const handleApprove = async (d: Donation) => {
+    setApprovePending(true);
     const fd = new FormData();
     fd.set("id", d.id);
     const res = await approveDonation(fd);
+    setApprovePending(false);
     if (res?.error) {
       toast.error(res.error);
     } else {
       toast.success("Donation approved");
+      setApproveUnlinked(null);
       router.refresh();
     }
+  };
+
+  // Approving is the moment the money starts counting, so an unlinked donation
+  // into an event's fund is worth one confirmation rather than a silent gap.
+  const handleApproveClick = (d: Donation) => {
+    if (!d.member_id && d.fund_id && eventFundIds.includes(d.fund_id)) {
+      setApproveUnlinked(d);
+      return;
+    }
+    void handleApprove(d);
   };
 
   const handleReject = async () => {
@@ -240,7 +262,7 @@ export function DonationsClient({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleApprove(d);
+                  handleApproveClick(d);
                 }}
                 className="rounded-md p-1.5 text-green-600 hover:bg-green-50"
                 aria-label="Approve"
@@ -318,6 +340,16 @@ export function DonationsClient({
                 onChange: (v) => setFundFilter(v === "__all__" ? "" : v),
                 options: funds.map((f) => ({ value: f.id, label: f.name })),
               },
+              {
+                key: "linked",
+                label: "Member",
+                value: linkedFilter || "__all__",
+                onChange: (v) => setLinkedFilter(v === "__all__" ? "" : v),
+                options: [
+                  { value: "unlinked", label: "Not linked" },
+                  { value: "linked", label: "Linked" },
+                ],
+              },
             ]}
           />
         </div>
@@ -358,7 +390,7 @@ export function DonationsClient({
                     <MobileActionButton
                       label="Approve"
                       success
-                      onClick={() => handleApprove(d)}
+                      onClick={() => handleApproveClick(d)}
                     >
                       <Check className="h-4 w-4" />
                     </MobileActionButton>
@@ -406,6 +438,18 @@ export function DonationsClient({
         confirmText="Archive"
         loading={deletePending}
         onConfirm={handleDelete}
+      />
+
+      <ConfirmDialog
+        open={!!approveUnlinked}
+        onOpenChange={(o) => !o && setApproveUnlinked(null)}
+        title="No member linked"
+        description={`${approveUnlinked?.donor_name ?? "This donor"} gave to ${
+          funds.find((f) => f.id === approveUnlinked?.fund_id)?.name ?? "an event fund"
+        } without a linked member. Approving it will count toward the fund but not toward any member's contribution. Link a member first, or approve anyway.`}
+        confirmText="Approve anyway"
+        loading={approvePending}
+        onConfirm={() => approveUnlinked && handleApprove(approveUnlinked)}
       />
 
       <FormDialog

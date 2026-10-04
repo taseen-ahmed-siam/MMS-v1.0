@@ -1,6 +1,6 @@
 ﻿import { requirePermission } from "@/lib/access";
 import { Metadata } from "next";
-import { getDonations, getFunds } from "@/lib/queries/admin";
+import { getDonations, getEventLinkedFundIds, getFunds } from "@/lib/queries/admin";
 import { PAGE_SIZE } from "@/constants";
 import { DonationsClient } from "./donations-client";
 
@@ -22,20 +22,31 @@ export default async function DonationsPage({
   const search = typeof params.search === "string" ? params.search : "";
   const status = typeof params.status === "string" ? params.status : "";
   const fundId = typeof params.fund === "string" ? params.fund : "";
+  const linked = typeof params.linked === "string" ? params.linked : "";
   const newTab = params.new === "1";
 
-  const [donations, funds] = await Promise.all([
-    getDonations({ search, status: status || undefined, fundId: fundId || undefined, page, pageSize: PAGE_SIZE }),
+  const [donations, funds, eventFundIds] = await Promise.all([
+    getDonations({
+      search,
+      status: status || undefined,
+      fundId: fundId || undefined,
+      linked: linked || undefined,
+      page,
+      pageSize: PAGE_SIZE,
+    }),
     getFunds(),
+    getEventLinkedFundIds(),
   ]);
 
   return (
     <DonationsClient
       donations={donations.data}
       funds={funds}
+      eventFundIds={eventFundIds}
       initialSearch={search}
       initialStatus={status}
       initialFundId={fundId}
+      initialLinked={linked}
       page={page}
       total={donations.total}
       totalPages={donations.totalPages}

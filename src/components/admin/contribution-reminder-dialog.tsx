@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AlertCircle, Loader2, Mail } from "lucide-react";
 
@@ -194,8 +194,17 @@ export function ContributionReminderDialog({
 }) {
   const [state, formAction, isSending] = useActionState(sendContributionReminder, {});
 
+  // `state` keeps returning the same success object until the next action, and
+  // the parent passes fresh inline handlers plus refreshed row data every render.
+  // Without this guard the effect re-ran on each of those, calling onSent()
+  // (router.refresh) which produced a new row, which re-ran the effect again --
+  // an endless toast/refetch loop. Each action result is handled exactly once.
+  const handledRef = useRef<unknown>(null);
+
   useEffect(() => {
     if (!state.success) return;
+    if (handledRef.current === state) return;
+    handledRef.current = state;
     toast.success("Email sent successfully", {
       description: `Delivered to ${row?.email ?? "the member"}.`,
     });
