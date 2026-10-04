@@ -12,7 +12,7 @@ export function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet, headers) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
@@ -20,10 +20,13 @@ export function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           );
+          for (const [key, value] of Object.entries(headers ?? {})) {
+            supabaseResponse.headers.set(key, value);
+          }
         },
       },
     }
   );
 
-  return { supabase, supabaseResponse };
+  return { supabase, supabaseResponse, getResponse: () => supabaseResponse };
 }
