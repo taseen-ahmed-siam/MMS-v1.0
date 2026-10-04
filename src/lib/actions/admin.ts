@@ -37,7 +37,11 @@ import {
   isDeliverableEmail,
   renderReminderTemplate,
 } from "@/lib/reminders";
-import type { BulkReminderRecipientResult, Expense } from "@/types/database";
+import type {
+  BulkReminderRecipientResult,
+  ContributionReminderEmailInsert,
+  Expense,
+} from "@/types/database";
 
 type ActionResult = { error?: string; success?: boolean; id?: string; warning?: string };
 
@@ -110,6 +114,10 @@ export async function createDonation(
     .insert({
       ...parsed.data,
       fund_id: parsed.data.fund_id || null,
+      // The form always sends member_id, as "" when no member was picked. An
+      // empty string passes `z.string()` but is not a valid uuid, so it has to
+      // become NULL rather than being handed to Postgres.
+      member_id: parsed.data.member_id || null,
       receipt_number: receiptNumber,
       created_by: userId,
     })
@@ -156,7 +164,13 @@ export async function updateDonation(
 
   const { error } = await supabase
     .from("donations")
-    .update({ ...parsed.data, fund_id: parsed.data.fund_id || null })
+    .update({
+      ...parsed.data,
+      fund_id: parsed.data.fund_id || null,
+      // Same normalisation as create: "" means "no member", and is what the form
+      // sends when the admin clears an existing link.
+      member_id: parsed.data.member_id || null,
+    })
     .eq("id", id);
 
   if (error) return { error: error.message };
@@ -1216,7 +1230,7 @@ export async function sendContributionReminder(
   } catch (error) {
     // Keep the failed attempt on record so the admin knows a reminder was tried,
     // but never surface transport internals to the browser.
-    await supabase.from("contribution_reminder_emails").insert({
+    await recordReminderAttempt({
       event_id: eventId,
       member_id: memberId,
       recipient_email: member.email,
@@ -1230,7 +1244,7 @@ export async function sendContributionReminder(
     return { error: "Unable to send email. Please try again." };
   }
 
-  await supabase.from("contribution_reminder_emails").insert({
+  await recordReminderAttempt({
     event_id: eventId,
     member_id: memberId,
     recipient_email: member.email,
@@ -1275,6 +1289,19 @@ const BULK_REMINDER_BATCH_SIZE = 10;
  * batches the queue shrinks, and an offset would then skip a member and email
  * another one twice.
  */
+// Records a reminder attempt. Delivery has already happened by the time this is
+// called, so a write failure must never turn a real send into a reported error
+// -- but it must not vanish either: a silently dropped history row leaves the
+// "last reminder" column permanently stale with no way to diagnose why.
+async function recordReminderAttempt(row: ContributionReminderEmailInsert) {
+  const { error } = await createAdminClient()
+    .from("contribution_reminder_emails")
+    .insert(row);
+  if (error) {
+    console.error(`[event-reminder] history insert failed (${row.status}): ${error.message}`);
+  }
+}
+
 export async function sendBulkContributionReminders(formData: FormData) {
   const access = await getCurrentAccess();
   if (!access.has("event.manage")) {
@@ -1394,7 +1421,7 @@ export async function sendBulkContributionReminders(formData: FormData) {
     // One history row per attempt, exactly like the single-member path. Written
     // after the send so the recorded status always matches what happened.
     results.push({ ...base, status: outcome });
-    await supabase.from("contribution_reminder_emails").insert({
+    await recordReminderAttempt({
       event_id: eventId,
       member_id: row.member_id,
       recipient_email: row.email,

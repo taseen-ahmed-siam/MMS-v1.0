@@ -895,7 +895,6 @@ export async function getMembersForDonation(
     .from("members")
     .select("id, member_id, full_name, phone, email, status")
     .is("deleted_at", null)
-    .in("status", ["active", "inactive"])
     .order("full_name", { ascending: true })
     .limit(limit);
 

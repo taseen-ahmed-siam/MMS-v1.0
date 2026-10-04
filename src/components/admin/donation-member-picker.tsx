@@ -6,7 +6,7 @@ import { Search, UserCheck, X } from "lucide-react";
 
 import { cn } from "@/lib/utils/format";
 
-type MemberOption = {
+export type DonationMemberOption = {
   id: string;
   member_code: string;
   full_name: string;
@@ -14,7 +14,7 @@ type MemberOption = {
   email: string | null;
 };
 
-type LinkedMember = MemberOption | null;
+type LinkedMember = DonationMemberOption | null;
 
 /**
  * Picks the member a counter-recorded donation belongs to.
@@ -32,11 +32,11 @@ export function DonationMemberPicker({
   disabled,
 }: {
   value: LinkedMember;
-  onChange: (member: MemberOption | null) => void;
+  onChange: (member: DonationMemberOption | null) => void;
   disabled?: boolean;
 }) {
   const [search, setSearch] = useState("");
-  const [options, setOptions] = useState<MemberOption[]>([]);
+  const [options, setOptions] = useState<DonationMemberOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
@@ -55,7 +55,7 @@ export function DonationMemberPicker({
           { signal: controller.signal }
         );
         if (!response.ok) throw new Error("Could not load members");
-        const payload = (await response.json()) as { members?: MemberOption[] };
+        const payload = (await response.json()) as { members?: DonationMemberOption[] };
         setOptions(payload.members ?? []);
         setError(null);
       } catch (fetchError) {
@@ -72,7 +72,7 @@ export function DonationMemberPicker({
     };
   }, [search, disabled]);
 
-  const select = (member: MemberOption) => {
+  const select = (member: DonationMemberOption) => {
     onChange(member);
     setSearch("");
     setShowResults(false);

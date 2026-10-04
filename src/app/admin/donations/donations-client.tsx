@@ -34,7 +34,10 @@ import {
 import { PaginationBar } from "@/components/admin/pagination-bar";
 import { FilterBar } from "@/components/admin/filter-bar";
 import { StatusBadge } from "@/components/admin/status-badge";
-import { DonationMemberPicker } from "@/components/admin/donation-member-picker";
+import {
+  DonationMemberPicker,
+  type DonationMemberOption,
+} from "@/components/admin/donation-member-picker";
 import { PageActions } from "@/components/admin/page-actions";
 import { AdminTableWrapper } from "@/components/admin/table-wrapper";
 import {
@@ -185,6 +188,21 @@ export function DonationsClient({
       key: "fund",
       header: "Fund",
       cell: (d: DonationRow) => <span>{d.donation_funds?.name || "General"}</span>,
+    },
+    {
+      key: "member",
+      header: "Member",
+      cell: (d: DonationRow) =>
+        d.members ? (
+          <div>
+            <p className="font-medium">{d.members.full_name}</p>
+            <p className="text-xs text-muted-foreground">{d.members.member_id}</p>
+          </div>
+        ) : (
+          // Surface the gap rather than hiding it: an unlinked donation never
+          // counts towards a member's contribution status.
+          <span className="text-xs text-muted-foreground">Not linked</span>
+        ),
     },
     {
       key: "amount",
@@ -485,8 +503,11 @@ function DonationFormDialog({
         editing?.member_id
           ? {
               id: editing.member_id,
-              member_code: editing.member_code ?? "",
-              full_name: editing.member_name ?? "Linked member",
+              // From the joined member record where available. A donation linked
+              // before the member was deleted, or before the join existed, still
+              // shows as linked rather than silently appearing unlinked.
+              member_code: editing.members?.member_id ?? "",
+              full_name: editing.members?.full_name ?? "Linked member",
               phone: null,
               email: null,
             }
@@ -557,11 +578,7 @@ function DonationFormDialog({
           error={errors.donor_name?.message}
           required
         />
-        <DonationMemberPicker
-          value={linkedMember}
-          onChange={setLinkedMember}
-          disabled={statePending}
-        />
+        <DonationMemberPicker value={linkedMember} onChange={setLinkedMember} disabled={pending} />
         <div className="grid grid-cols-2 gap-4">
           <FormInput
             label="Phone"

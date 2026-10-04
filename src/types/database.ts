@@ -194,6 +194,12 @@ export interface ContributionReminderEmail {
   status: 'sent' | 'failed';
 }
 
+/** Insert shape for a reminder attempt; `id` and `sent_at` come from DB defaults. */
+export type ContributionReminderEmailInsert = Omit<
+  ContributionReminderEmail,
+  'id' | 'sent_at'
+>;
+
 export interface Khutbah {
   id: string;
   title: string;
