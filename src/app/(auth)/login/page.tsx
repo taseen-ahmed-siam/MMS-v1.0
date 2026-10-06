@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Mail, Lock, Loader2 } from "lucide-react";
+import { Mail, Lock, Loader2, Eye, EyeOff, Home } from "lucide-react";
 import { loginAction, type AuthActionState } from "@/lib/auth/actions";
 
 const initialState: AuthActionState = { error: null };
@@ -13,6 +13,7 @@ export default function LoginPage() {
     loginAction,
     initialState
   );
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <div className="min-h-screen flex">
@@ -20,7 +21,7 @@ export default function LoginPage() {
         <div className="relative z-10 text-center text-primary-foreground">
             <Image
               src="/logo.png"
-              alt="Al-Noor Mosque"
+              alt="Beara-Jam-e-Masjid"
               width={180}
               height={56}
               priority
@@ -36,7 +37,7 @@ export default function LoginPage() {
           <div className="lg:hidden text-center">
             <Image
               src="/logo.png"
-              alt="Al-Noor Mosque"
+              alt="Beara-Jam-e-Masjid"
               width={160}
               height={48}
               priority
@@ -94,19 +95,26 @@ export default function LoginPage() {
                 <input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   required
                   placeholder="Enter your password"
-                  className="h-11 w-full rounded-lg border border-input bg-white pl-10 pr-4 text-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
+                  className="h-11 w-full rounded-lg border border-input bg-white pl-10 pr-11 text-sm outline-none transition-colors focus:border-ring focus:ring-2 focus:ring-ring/20"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  title={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground focus:outline-none focus-visible:text-foreground"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
               </div>
-              <Link
-                href="/forgot-password"
-                className="inline-block text-xs font-medium text-primary hover:text-primary-dark transition-colors"
-              >
-                Forgot password?
-              </Link>
             </div>
 
             <button
@@ -124,6 +132,16 @@ export default function LoginPage() {
               )}
             </button>
           </form>
+
+          <div className="text-center">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Home className="h-4 w-4" />
+              Back to Homepage
+            </Link>
+          </div>
         </div>
       </div>
     </div>

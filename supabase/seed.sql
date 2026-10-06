@@ -143,7 +143,7 @@ ON CONFLICT DO NOTHING;
 -- ============================================================
 
 INSERT INTO mosque_settings (mosque_name, arabic_name, currency, timezone, manual_override)
-VALUES ('Al-Noor Mosque', 'مسجد النور', 'BDT', 'Asia/Dhaka', true)
+VALUES ('Beara-Jam-e-Masjid', 'مسجد النور', 'BDT', 'Asia/Dhaka', true)
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
@@ -171,7 +171,7 @@ ON CONFLICT (slug) DO NOTHING;
 
 INSERT INTO announcements (title, description, priority, start_date, status)
 VALUES (
-  'Welcome to Al-Noor Mosque',
+  'Welcome to Beara-Jam-e-Masjid',
   'Assalamu Alaikum! Welcome to our mosque website. Stay updated with prayer times, events, and community announcements.',
   'important',
   CURRENT_DATE,

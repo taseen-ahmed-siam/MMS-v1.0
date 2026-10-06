@@ -7,7 +7,7 @@ import { SectionHeading } from "@/components/public/section-heading";
 export const metadata: Metadata = {
   title: "Committee",
   description:
-    "Meet the elected committee members who serve and guide Al-Noor Mosque community.",
+    "Meet the elected committee members who serve and guide Beara-Jam-e-Masjid community.",
 };
 
 export default async function CommitteePage() {

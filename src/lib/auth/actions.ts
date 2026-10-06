@@ -60,24 +60,6 @@ export async function logoutAction() {
   redirect("/login");
 }
 
-export async function resetPasswordAction(
-  _prevState: AuthActionState,
-  formData: FormData
-): Promise<AuthActionState> {
-  const email = formData.get("email") as string;
-  const supabase = await createClient();
-
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/reset-password`,
-  });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  return { success: true };
-}
-
 export async function updatePasswordAction(
   _prevState: AuthActionState,
   formData: FormData

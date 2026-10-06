@@ -9,7 +9,7 @@ import { formatDate, formatTime } from "@/lib/utils/format";
 export const metadata: Metadata = {
   title: "Events",
   description:
-    "Browse upcoming events, programs, and community gatherings at Al-Noor Mosque.",
+    "Browse upcoming events, programs, and community gatherings at Beara-Jam-e-Masjid.",
 };
 
 export default async function EventsPage() {

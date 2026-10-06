@@ -17,7 +17,7 @@ import { formatTime, formatDate } from "@/lib/utils/format";
 export const metadata: Metadata = {
   title: "Prayer Times",
   description:
-    "View today's prayer times, weekly schedule, and Jumu'ah congregation timings at Al-Noor Mosque.",
+    "View today's prayer times, weekly schedule, and Jumu'ah congregation timings at Beara-Jam-e-Masjid.",
 };
 
 export default async function PrayerTimesPage() {

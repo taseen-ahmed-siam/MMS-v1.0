@@ -8,7 +8,7 @@ import { formatDate } from "@/lib/utils/format";
 export const metadata: Metadata = {
   title: "Announcements",
   description:
-    "Stay informed with the latest announcements, notices, and updates from Al-Noor Mosque.",
+    "Stay informed with the latest announcements, notices, and updates from Beara-Jam-e-Masjid.",
 };
 
 export default async function AnnouncementsPage() {

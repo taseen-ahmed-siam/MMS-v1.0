@@ -8,7 +8,7 @@ import { getGalleryImages } from "@/lib/queries/public";
 export const metadata: Metadata = {
   title: "Gallery",
   description:
-    "Browse photos and moments captured at Al-Noor Mosque events and gatherings.",
+    "Browse photos and moments captured at Beara-Jam-e-Masjid events and gatherings.",
 };
 
 export default async function GalleryPage() {

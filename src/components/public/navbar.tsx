@@ -40,7 +40,7 @@ export function Navbar({ settings, isLoggedIn }: NavbarProps) {
     setMobileOpen(false);
   }, [pathname]);
 
-  const mosqueName = settings?.mosque_name ?? "Al-Noor Mosque";
+  const mosqueName = settings?.mosque_name ?? "Beara-Jam-e-Masjid";
 
   return (
     <>

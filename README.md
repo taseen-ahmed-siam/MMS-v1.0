@@ -221,7 +221,7 @@ SMTP_USER=your-smtp-username
 SMTP_PASS=your-smtp-password
 SMTP_SECURE=false
 EMAIL_FROM=admin@your-mosque.com
-EMAIL_FROM_NAME=Al-Noor Mosque
+EMAIL_FROM_NAME=Beara-Jam-e-Masjid
 ```
 
 - `SMTP_PORT`: `587` for STARTTLS, `465` for implicit TLS (`SMTP_SECURE=true` is applied automatically on 465)

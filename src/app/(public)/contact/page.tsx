@@ -6,7 +6,7 @@ import { MapPin, Phone, Mail, Clock } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Contact Us",
-  description: "Get in touch with Al-Noor Mosque. Send us your inquiries, suggestions, or volunteer requests.",
+  description: "Get in touch with Beara-Jam-e-Masjid. Send us your inquiries, suggestions, or volunteer requests.",
 };
 
 export default async function ContactPage() {

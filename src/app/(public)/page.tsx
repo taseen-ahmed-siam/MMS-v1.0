@@ -21,7 +21,7 @@ function getMapEmbedUrl(mapUrl: string | null | undefined, address: string) {
 }
 
 export const metadata: Metadata = {
-  title: "Welcome to Al-Noor Mosque",
+  title: "Welcome to Beara-Jam-e-Masjid",
   description:
     "A place of peace, prayer, and community. Prayer times, events, donations, and more.",
 };
@@ -70,7 +70,7 @@ export default async function HomePage() {
               className="mx-auto mb-4 h-auto w-full max-w-[12rem] sm:max-w-[14rem] md:max-w-[16rem] select-none"
             />
             <h1 className="text-4xl md:text-6xl font-bold leading-tight mb-4">
-              <span className="text-gold-gradient">{settings?.mosque_name || "Al-Noor Mosque"}</span>
+              <span className="text-gold-gradient">{settings?.mosque_name || "Beara-Jam-e-Masjid"}</span>
             </h1>
             <OrnamentalDivider tone="light" className="max-w-md mx-auto" />
             <p className="text-lg md:text-xl text-emerald-100 max-w-2xl mx-auto mt-4 leading-relaxed">

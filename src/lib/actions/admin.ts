@@ -1205,7 +1205,7 @@ export async function sendContributionReminder(
     .limit(1)
     .maybeSingle();
 
-  const mosqueName = settings?.mosque_name || "Al-Noor Mosque";
+  const mosqueName = settings?.mosque_name || "Beara-Jam-e-Masjid";
   const details = {
     memberName: member.full_name,
     eventName: event.title,
@@ -1368,7 +1368,7 @@ export async function sendBulkContributionReminders(formData: FormData) {
     .limit(1)
     .maybeSingle();
 
-  const mosqueName = settings?.mosque_name || "Al-Noor Mosque";
+  const mosqueName = settings?.mosque_name || "Beara-Jam-e-Masjid";
   const batch = incomplete.slice(startIndex, startIndex + BULK_REMINDER_BATCH_SIZE);
 
   const results: BulkReminderRecipientResult[] = [];
@@ -2295,6 +2295,101 @@ export async function toggleUserStatus(formData: FormData) {
     entity: "profile",
     entityId: userId,
     newData: { status },
+  });
+
+  revalidatePath("/admin/users");
+  return { success: true };
+}
+
+export async function deleteUserAccount(formData: FormData): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!isAdminRole(access.role)) {
+    return { error: "You are not allowed to delete users" };
+  }
+
+  const userId = (formData.get("id") as string)?.trim();
+  if (!userId) return { error: "Missing user id" };
+
+  const actorId = await getCurrentUserId();
+  if (actorId && userId === actorId) {
+    return { error: "You cannot delete your own account" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { data: target } = await supabase
+    .from("profiles")
+    .select("id, email, full_name, role")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!target) return { error: "This user no longer exists" };
+  if (!access.isSuperAdmin && (target.role === "super_admin" || target.role === "admin")) {
+    return { error: "Only the Super Admin can delete admin accounts" };
+  }
+  if (target.role === "super_admin") {
+    const { count } = await supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "super_admin");
+    if ((count ?? 0) <= 1) {
+      return { error: "The last Super Admin cannot be deleted" };
+    }
+  }
+
+  // Cascades remove `profiles` and `user_roles`; everything else (donations,
+  // events, audit trails) keeps its history with the reference nulled.
+  const { error } = await supabase.auth.admin.deleteUser(userId);
+  if (error) return { error: error.message };
+
+  logAudit({
+    action: "delete",
+    module: "users",
+    entity: "user",
+    entityId: userId,
+    oldData: { email: target.email, full_name: target.full_name, role: target.role },
+    newData: null,
+  });
+
+  revalidatePath("/admin/users");
+  revalidatePath("/admin/members");
+  return { success: true };
+}
+
+export async function changeUserPassword(formData: FormData): Promise<ActionResult> {
+  const access = await getCurrentAccess();
+  if (!isAdminRole(access.role)) {
+    return { error: "You are not allowed to change passwords" };
+  }
+
+  const userId = (formData.get("id") as string)?.trim();
+  const password = formData.get("password") as string;
+  if (!userId) return { error: "Missing user id" };
+  if (!password || password.length < 6) {
+    return { error: "Password must be at least 6 characters" };
+  }
+
+  const supabase = createAdminClient();
+
+  const { data: target } = await supabase
+    .from("profiles")
+    .select("id, email, role")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!target) return { error: "This user no longer exists" };
+  if (!access.isSuperAdmin && (target.role === "super_admin" || target.role === "admin")) {
+    return { error: "Only the Super Admin can change this user's password" };
+  }
+
+  const { error } = await supabase.auth.admin.updateUserById(userId, { password });
+  if (error) return { error: error.message };
+
+  logAudit({
+    action: "update",
+    module: "users",
+    entity: "user_password",
+    entityId: userId,
+    oldData: null,
+    newData: { email: target.email },
   });
 
   revalidatePath("/admin/users");

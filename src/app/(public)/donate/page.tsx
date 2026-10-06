@@ -6,7 +6,7 @@ import { PRESET_DONATION_AMOUNTS, CURRENCY_SYMBOL } from "@/constants";
 
 export const metadata: Metadata = {
   title: "Donate",
-  description: "Support Al-Noor Mosque with your donation. Every contribution counts.",
+  description: "Support Beara-Jam-e-Masjid with your donation. Every contribution counts.",
 };
 
 export default async function DonatePage() {

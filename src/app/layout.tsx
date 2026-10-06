@@ -28,28 +28,28 @@ const notoSansBengali = Noto_Sans_Bengali({
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: {
-    default: "Al-Noor Mosque",
-    template: "%s | Al-Noor Mosque",
+    default: "Beara-Jam-e-Masjid",
+    template: "%s | Beara-Jam-e-Masjid",
   },
   description:
-    "Welcome to Al-Noor Mosque. Prayer times, events, announcements, and community resources.",
+    "Welcome to Beara-Jam-e-Masjid. Prayer times, events, announcements, and community resources.",
   keywords: [
     "mosque",
     "masjid",
     "prayer times",
     "islamic",
-    "Al-Noor Mosque",
+    "Beara-Jam-e-Masjid",
     "community",
   ],
   icons: {
     icon: "/icon.svg",
   },
   openGraph: {
-    title: "Al-Noor Mosque",
+    title: "Beara-Jam-e-Masjid",
     description:
       "A place of peace, prayer, and community. Prayer times, events, and announcements.",
     type: "website",
-    siteName: "Al-Noor Mosque",
+    siteName: "Beara-Jam-e-Masjid",
   },
 };
 

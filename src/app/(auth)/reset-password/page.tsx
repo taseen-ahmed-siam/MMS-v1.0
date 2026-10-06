@@ -23,7 +23,7 @@ export default function ResetPasswordPage() {
           <div className="mx-auto mb-8 flex h-24 w-24 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm">
             <Landmark className="h-12 w-12 text-accent" />
           </div>
-          <h1 className="text-4xl font-bold mb-4">Al-Noor Mosque</h1>
+          <h1 className="text-4xl font-bold mb-4">Beara-Jam-e-Masjid</h1>
           <p className="text-lg text-white/80 max-w-sm mx-auto">
             Set your new password
           </p>
@@ -40,7 +40,7 @@ export default function ResetPasswordPage() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
               <Landmark className="h-8 w-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold text-primary">Al-Noor Mosque</h1>
+            <h1 className="text-2xl font-bold text-primary">Beara-Jam-e-Masjid</h1>
           </div>
 
           <div>

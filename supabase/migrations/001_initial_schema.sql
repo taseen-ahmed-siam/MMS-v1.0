@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS profiles (
 
 CREATE TABLE IF NOT EXISTS mosque_settings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  mosque_name TEXT NOT NULL DEFAULT 'Al-Noor Mosque',
+  mosque_name TEXT NOT NULL DEFAULT 'Beara-Jam-e-Masjid',
   arabic_name TEXT,
   logo_url TEXT,
   favicon_url TEXT,

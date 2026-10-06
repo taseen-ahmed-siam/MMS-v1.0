@@ -3,8 +3,14 @@
 import { useEffect, useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Shield, UserCheck, UserX } from "lucide-react";
-import { updateUserRole, toggleUserStatus, createUserAccount } from "@/lib/actions/admin";
+import { Shield, Trash2, UserCheck, UserX, KeyRound } from "lucide-react";
+import {
+  updateUserRole,
+  toggleUserStatus,
+  createUserAccount,
+  deleteUserAccount,
+  changeUserPassword,
+} from "@/lib/actions/admin";
 import { USER_ROLES, MEMBER_STATUSES, MEMBERSHIP_TYPES } from "@/constants";
 import { formatDate } from "@/lib/utils/format";
 import { DataTable, type Column } from "@/components/admin/data-table";
@@ -13,6 +19,7 @@ import { FormDialog } from "@/components/admin/form-dialog";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { AdminTableWrapper } from "@/components/admin/table-wrapper";
 import { PageHeader } from "@/components/forms/page-header";
+import { ConfirmDialog } from "@/components/forms/confirm-dialog";
 import { FormInput, FormSubmitButton } from "@/components/forms";
 import { FormSelect } from "@/components/forms/form-select";
 import { PageActions } from "@/components/admin/page-actions";
@@ -56,6 +63,14 @@ export function UsersClient({ data, currentRole }: UsersClientProps) {
 
   const [isUpdatingRole, startRoleTransition] = useTransition();
   const [isToggling, startToggleTransition] = useTransition();
+
+  const [deleteTarget, setDeleteTarget] = useState<Profile | null>(null);
+  const [isDeleting, startDeleteTransition] = useTransition();
+
+  const [passwordTarget, setPasswordTarget] = useState<Profile | null>(null);
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [isChangingPassword, startPasswordTransition] = useTransition();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -146,6 +161,49 @@ export function UsersClient({ data, currentRole }: UsersClientProps) {
     });
   };
 
+  const handleDeleteConfirm = () => {
+    if (!deleteTarget) return;
+    startDeleteTransition(async () => {
+      const fd = new FormData();
+      fd.set("id", deleteTarget.id);
+      const result = await deleteUserAccount(fd);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("User deleted permanently");
+        router.refresh();
+      }
+      setDeleteTarget(null);
+    });
+  };
+
+  const openPasswordDialog = (user: Profile) => {
+    setPasswordTarget(user);
+    setNewPassword("");
+    setPasswordError("");
+  };
+
+  const handlePasswordSubmit = () => {
+    if (!passwordTarget) return;
+    if (newPassword.length < 6) {
+      setPasswordError("Password must be at least 6 characters");
+      return;
+    }
+    startPasswordTransition(async () => {
+      const fd = new FormData();
+      fd.set("id", passwordTarget.id);
+      fd.set("password", newPassword);
+      const result = await changeUserPassword(fd);
+      if (result.error) {
+        setPasswordError(result.error);
+      } else {
+        toast.success(`Password updated for ${passwordTarget.full_name || passwordTarget.email}`);
+        router.refresh();
+        setPasswordTarget(null);
+      }
+    });
+  };
+
   const filtered = data.filter((user) => {
     if (statusFilter !== "__all__" && user.status !== statusFilter) return false;
     if (search) {
@@ -194,10 +252,26 @@ export function UsersClient({ data, currentRole }: UsersClientProps) {
                 <UserCheck className="h-4 w-4 text-green-600" />
               )}
             </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              title="Change Password"
+              onClick={(e) => { e.stopPropagation(); openPasswordDialog(row); }}
+            >
+              <KeyRound className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              title="Delete User"
+              onClick={(e) => { e.stopPropagation(); setDeleteTarget(row); }}
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
           </>
         )}
       </div>
-    ), className: "w-24" },
+    ), className: "w-32" },
   ];
 
   return (
@@ -249,7 +323,7 @@ export function UsersClient({ data, currentRole }: UsersClientProps) {
                 </span>
               </div>
               {canManage && (
-                <div className="mt-3 flex items-center gap-2 border-t border-black/5 pt-3">
+                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-black/5 pt-3">
                   <Button variant="outline" size="sm" className="flex-1" onClick={() => openRoleDialog(user)}>
                     <Shield className="h-3.5 w-3.5" />
                     Change Role
@@ -272,6 +346,24 @@ export function UsersClient({ data, currentRole }: UsersClientProps) {
                         Activate
                       </>
                     )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => openPasswordDialog(user)}
+                  >
+                    <KeyRound className="h-3.5 w-3.5" />
+                    Password
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 text-destructive hover:text-destructive"
+                    onClick={() => setDeleteTarget(user)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete
                   </Button>
                 </div>
               )}
@@ -451,6 +543,69 @@ export function UsersClient({ data, currentRole }: UsersClientProps) {
           </div>
         </div>
       </FormDialog>
+
+      <FormDialog
+        open={!!passwordTarget}
+        onOpenChange={(o) => {
+          if (!o) {
+            setPasswordTarget(null);
+            setPasswordError("");
+          }
+        }}
+        title="Change Password"
+        description={
+          passwordTarget
+            ? `Set a new password for ${passwordTarget.full_name || passwordTarget.email}`
+            : undefined
+        }
+        footer={
+          <div className="flex w-full gap-2 sm:justify-end">
+            <Button variant="outline" onClick={() => setPasswordTarget(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handlePasswordSubmit} disabled={isChangingPassword}>
+              {isChangingPassword ? "Saving..." : "Update Password"}
+            </Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          {passwordError && (
+            <div className="rounded-xl bg-red-50 text-red-700 text-sm p-3 border border-red-200">
+              {passwordError}
+            </div>
+          )}
+          <FormInput
+            label="New Password"
+            name="new_user_password"
+            type="password"
+            value={newPassword}
+            onChange={(e) => {
+              setNewPassword(e.target.value);
+              setPasswordError("");
+            }}
+            placeholder="Min 6 characters"
+            required
+            autoFocus
+          />
+        </div>
+      </FormDialog>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => {
+          if (!o && !isDeleting) setDeleteTarget(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Delete user permanently?"
+        description={
+          deleteTarget
+            ? `${deleteTarget.full_name || deleteTarget.email} will be removed from the system for good. This cannot be undone.`
+            : undefined
+        }
+        confirmText="Delete User"
+        loading={isDeleting}
+      />
     </div>
   );
 }

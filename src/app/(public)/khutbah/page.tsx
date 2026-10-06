@@ -9,7 +9,7 @@ import { formatDate } from "@/lib/utils/format";
 export const metadata: Metadata = {
   title: "Khutbah",
   description:
-    "Browse the latest khutbahs (sermons) delivered at Al-Noor Mosque.",
+    "Browse the latest khutbahs (sermons) delivered at Beara-Jam-e-Masjid.",
 };
 
 export default async function KhutbahPage() {

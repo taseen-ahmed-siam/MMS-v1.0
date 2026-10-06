@@ -52,7 +52,7 @@ export default async function EventContributionsPage({
       event={event}
       rows={rows}
       summary={summary}
-      mosqueName={settings?.mosque_name || "Al-Noor Mosque"}
+      mosqueName={settings?.mosque_name || "Beara-Jam-e-Masjid"}
       emailConfigured={isEmailConfigured()}
     />
   );

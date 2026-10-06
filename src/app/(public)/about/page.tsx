@@ -8,7 +8,7 @@ import { SectionHeading } from "@/components/public/section-heading";
 export const metadata: Metadata = {
   title: "About Us",
   description:
-    "Learn about Al-Noor Mosque — our history, mission, facilities, and the services we offer to the community.",
+    "Learn about Beara-Jam-e-Masjid — our history, mission, facilities, and the services we offer to the community.",
 };
 
 export default async function AboutPage() {
@@ -31,7 +31,7 @@ export default async function AboutPage() {
           />
           <div className="mx-auto max-w-3xl mt-8 space-y-4 text-muted-foreground leading-relaxed">
             <p>
-              Al-Noor Mosque was established with the vision of creating a spiritual
+              Beara-Jam-e-Masjid was established with the vision of creating a spiritual
               haven where Muslims can gather for prayer, seek knowledge, and strengthen
               the bonds of brotherhood and sisterhood in the community.
             </p>
@@ -41,7 +41,7 @@ export default async function AboutPage() {
               range of educational and social events for people of all ages.
             </p>
             <p>
-              {settings?.mosque_name || "Al-Noor Mosque"} continues to grow as a
+              {settings?.mosque_name || "Beara-Jam-e-Masjid"} continues to grow as a
               center for faith, education, and charitable work — guided by the Quran
               and Sunnah, and supported by the generous contributions of our community
               members.

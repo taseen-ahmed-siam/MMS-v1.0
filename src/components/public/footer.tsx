@@ -16,7 +16,7 @@ const quickLinks = [
 ];
 
 export function Footer({ settings }: FooterProps) {
-  const mosqueName = settings?.mosque_name ?? "Al-Noor Mosque";
+  const mosqueName = settings?.mosque_name ?? "Beara-Jam-e-Masjid";
   const year = new Date().getFullYear();
 
   return (

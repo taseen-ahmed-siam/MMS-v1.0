@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Al-Noor Mosque",
-    short_name: "Al-Noor",
+    name: "Beara-Jam-e-Masjid",
+    short_name: "Beara-Jam-e-Masjid",
     description: "A place of peace, prayer, and community",
     start_url: "/",
     display: "standalone",

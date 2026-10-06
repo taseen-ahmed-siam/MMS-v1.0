@@ -1,5 +1,5 @@
 export const SITE_CONFIG = {
-  name: "Al-Noor Mosque",
+  name: "Beara-Jam-e-Masjid",
   arabicName: "مسجد النور",
   description: "A place of peace, prayer, and community",
   url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
