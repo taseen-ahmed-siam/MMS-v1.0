@@ -15,6 +15,14 @@ import { fundSchema } from "@/lib/validations";
 import { formatCurrency } from "@/lib/utils/format";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTable } from "@/components/admin/data-table";
+import {
+  DesktopTableOnly,
+  MobileActionButton,
+  MobileRecordCard,
+  MobileRecordFooter,
+  MobileRecordHead,
+  MobileRecordList,
+} from "@/components/admin/mobile-record-card";
 import { FilterBar } from "@/components/admin/filter-bar";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { PageActions } from "@/components/admin/page-actions";
@@ -208,22 +216,31 @@ export function FundsClient({ funds }: FundsClientProps) {
             ]}
           />
         </div>
-        <div className="divide-y md:hidden">
-          {filtered.map((f) => {
+        <MobileRecordList
+          items={filtered}
+          getKey={(fund) => fund.id}
+          renderCard={(f) => {
             const target = Number(f.target_amount) || 0;
             const collected = Number(f.collected_amount) || 0;
             const pct = target > 0 ? Math.min(100, Math.round((collected / target) * 100)) : 0;
             return (
-              <article key={f.id} className="px-4 py-3.5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-foreground">{f.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">{f.slug}</p>
+              <MobileRecordCard className="px-3 py-3.5">
+                <div className="flex items-start gap-2.5">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold uppercase text-primary">
+                    {f.name
+                      .split(" ")
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((part) => part[0])
+                      .join("")}
                   </div>
-                  <StatusBadge status={f.status} statuses={[...FUND_STATUSES]} />
-                </div>
-
-                <div className="mt-3">
+                  <div className="min-w-0 flex-1">
+                    <MobileRecordHead
+                      title={f.name}
+                      subtitle={f.slug}
+                      trailing={<StatusBadge status={f.status} statuses={[...FUND_STATUSES]} />}
+                    />
+                    <div className="mt-2.5 border-t border-border/70 pt-2.5">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">Progress</span>
                     <span className="font-bold tabular-nums text-[#064E3B]">{pct}%</span>
@@ -234,69 +251,58 @@ export function FundsClient({ funds }: FundsClientProps) {
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                </div>
+                    </div>
 
-                <div className="mt-2.5 grid grid-cols-2 gap-2">
-                  <div className="rounded-lg bg-[#064E3B]/[0.04] px-2.5 py-2">
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
-                      Collected
-                    </p>
-                    <p className="mt-0.5 text-sm font-bold tabular-nums text-[#064E3B]">
-                      {formatCurrency(collected)}
-                    </p>
-                  </div>
-                  <div className="rounded-lg bg-black/[0.03] px-2.5 py-2">
-                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
-                      Target
-                    </p>
-                    <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
-                      {formatCurrency(target)}
-                    </p>
-                  </div>
-                </div>
+                    <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 text-[11px]">
+                      <div>
+                        <p className="uppercase tracking-wide text-muted-foreground">Collected</p>
+                        <p className="mt-0.5 font-semibold text-primary">{formatCurrency(collected)}</p>
+                      </div>
+                      <div>
+                        <p className="uppercase tracking-wide text-muted-foreground">Target</p>
+                        <p className="mt-0.5 font-medium text-foreground">{formatCurrency(target)}</p>
+                      </div>
+                      <div>
+                        <p className="uppercase tracking-wide text-muted-foreground">Start</p>
+                        <p className="mt-0.5 font-medium text-foreground">{f.start_date || "—"}</p>
+                      </div>
+                      <div>
+                        <p className="uppercase tracking-wide text-muted-foreground">End</p>
+                        <p className="mt-0.5 font-medium text-foreground">{f.end_date || "—"}</p>
+                      </div>
+                    </div>
 
-                <div className="mt-2.5 flex items-center justify-between gap-2 border-t border-black/5 pt-2.5">
-                  <span className="inline-flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-                    {f.is_visible ? (
-                      <Eye className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                    ) : (
-                      <EyeOff className="h-3.5 w-3.5 shrink-0" />
-                    )}
-                    <span className="truncate">
-                      {f.is_visible ? "Visible on public site" : "Hidden from public site"}
-                    </span>
-                  </span>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openEdit(f);
-                      }}
-                      className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                      aria-label="Edit"
+                    <MobileRecordFooter
+                      meta={
+                        <span className="inline-flex min-w-0 items-center gap-1.5">
+                          {f.is_visible ? (
+                            <Eye className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                          ) : (
+                            <EyeOff className="h-3.5 w-3.5 shrink-0" />
+                          )}
+                          <span className="truncate">
+                            {f.is_visible ? "Visible on public site" : "Hidden from public site"}
+                          </span>
+                        </span>
+                      }
                     >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleting(f);
-                      }}
-                      className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                      aria-label="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                      <MobileActionButton label="Edit" onClick={() => openEdit(f)}>
+                        <Pencil className="h-4 w-4" />
+                      </MobileActionButton>
+                      <MobileActionButton label="Delete" destructive onClick={() => setDeleting(f)}>
+                        <Trash2 className="h-4 w-4" />
+                      </MobileActionButton>
+                    </MobileRecordFooter>
                   </div>
                 </div>
-              </article>
+              </MobileRecordCard>
             );
-          })}
-        </div>
+          }}
+        />
 
-        <div className="hidden md:block">
+        <DesktopTableOnly>
           <DataTable data={filtered} columns={columns} />
-        </div>
+        </DesktopTableOnly>
       </AdminTableWrapper>
 
       <FundFormDialog open={dialogOpen} onOpenChange={setDialogOpen} editing={editing} />

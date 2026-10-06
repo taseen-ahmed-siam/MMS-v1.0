@@ -18,8 +18,6 @@ import { DataTable } from "@/components/admin/data-table";
 import {
   DesktopTableOnly,
   MobileActionButton,
-  MobileMetaGrid,
-  MobileMetaTile,
   MobileRecordCard,
   MobileRecordFooter,
   MobileRecordHead,
@@ -216,33 +214,67 @@ export function IncomeClient({
           items={incomes}
           getKey={(i) => i.id}
           renderCard={(i) => (
-            <MobileRecordCard>
-              <MobileRecordHead
-                title={i.source || "-"}
-                subtitle={
-                  i.reference_number
-                    ? `Ref ${i.reference_number}`
-                    : i.income_category
-                      ? i.income_category.replace(/_/g, " ")
-                      : undefined
-                }
-              />
-              <MobileMetaGrid columns={3}>
-                <MobileMetaTile label="Amount" tone="emerald" value={formatCurrency(Number(i.amount) || 0)} />
-                <MobileMetaTile
-                  label="Method"
-                  value={i.payment_method?.replace(/_/g, " ") || "—"}
-                />
-                <MobileMetaTile label="Date" value={i.date ? formatDate(i.date) : "—"} />
-              </MobileMetaGrid>
-              <MobileRecordFooter>
-                <MobileActionButton label="Edit" onClick={() => openEdit(i)}>
-                  <Pencil className="h-4 w-4" />
-                </MobileActionButton>
-                <MobileActionButton label="Delete" destructive onClick={() => setDeleting(i)}>
-                  <Trash2 className="h-4 w-4" />
-                </MobileActionButton>
-              </MobileRecordFooter>
+            <MobileRecordCard className="px-3 py-3.5">
+              <div className="flex items-start gap-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold uppercase text-primary">
+                  {(i.source || "Income")
+                    .split(" ")
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((part) => part[0])
+                    .join("")}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <MobileRecordHead
+                    title={i.source || "-"}
+                    subtitle={
+                      i.reference_number
+                        ? `Ref ${i.reference_number}`
+                        : i.income_category
+                          ? i.income_category.replace(/_/g, " ")
+                          : undefined
+                    }
+                  />
+                  <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-border/70 pt-2.5 text-[11px]">
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Amount</p>
+                      <p className="mt-0.5 font-semibold text-primary">
+                        {formatCurrency(Number(i.amount) || 0)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Category</p>
+                      <p className="mt-0.5 truncate capitalize font-medium text-foreground">
+                        {i.income_category || "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Method</p>
+                      <p className="mt-0.5 capitalize font-medium text-foreground">
+                        {i.payment_method?.replace(/_/g, " ") || "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Date</p>
+                      <p className="mt-0.5 font-medium text-foreground">
+                        {i.date ? formatDate(i.date) : "—"}
+                      </p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="uppercase tracking-wide text-muted-foreground">Description</p>
+                      <p className="mt-0.5 truncate font-medium text-foreground">{i.description || "—"}</p>
+                    </div>
+                  </div>
+                  <MobileRecordFooter>
+                    <MobileActionButton label="Edit" onClick={() => openEdit(i)}>
+                      <Pencil className="h-4 w-4" />
+                    </MobileActionButton>
+                    <MobileActionButton label="Delete" destructive onClick={() => setDeleting(i)}>
+                      <Trash2 className="h-4 w-4" />
+                    </MobileActionButton>
+                  </MobileRecordFooter>
+                </div>
+              </div>
             </MobileRecordCard>
           )}
         />

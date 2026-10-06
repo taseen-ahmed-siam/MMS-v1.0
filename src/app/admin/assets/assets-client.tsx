@@ -15,6 +15,14 @@ import { assetSchema } from "@/lib/validations";
 import { ASSET_CATEGORIES, ASSET_CONDITIONS } from "@/constants";
 import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { DataTable } from "@/components/admin/data-table";
+import {
+  DesktopTableOnly,
+  MobileActionButton,
+  MobileRecordCard,
+  MobileRecordFooter,
+  MobileRecordHead,
+  MobileRecordList,
+} from "@/components/admin/mobile-record-card";
 import { PaginationBar } from "@/components/admin/pagination-bar";
 import { FilterBar } from "@/components/admin/filter-bar";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -230,7 +238,70 @@ export function AssetsClient({
             ]}
           />
         </div>
-        <DataTable data={filtered} columns={columns} />
+        <MobileRecordList
+          items={filtered}
+          getKey={(asset) => asset.id}
+          renderCard={(asset) => (
+            <MobileRecordCard className="px-3 py-3.5">
+              <div className="flex items-start gap-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold uppercase text-primary">
+                  {asset.name
+                    .split(" ")
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((part) => part[0])
+                    .join("")}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <MobileRecordHead
+                    title={asset.name}
+                    subtitle={asset.brand || asset.category}
+                    trailing={
+                      <StatusBadge
+                        status={asset.current_condition}
+                        statuses={[...ASSET_CONDITIONS]}
+                      />
+                    }
+                  />
+                  <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-border/70 pt-2.5 text-[11px]">
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Asset ID</p>
+                      <p className="mt-0.5 truncate font-medium text-foreground">{asset.asset_id}</p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Category</p>
+                      <p className="mt-0.5 truncate capitalize font-medium text-foreground">{asset.category || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Quantity</p>
+                      <p className="mt-0.5 font-medium text-foreground">{asset.quantity}</p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Location</p>
+                      <p className="mt-0.5 truncate font-medium text-foreground">{asset.location || "—"}</p>
+                    </div>
+                  </div>
+                  <MobileRecordFooter
+                    meta={asset.purchase_date ? `Purchased ${formatDate(asset.purchase_date)}` : undefined}
+                  >
+                    <span className="mr-1 text-xs font-semibold text-foreground">
+                      {formatCurrency(Number(asset.purchase_cost) || 0)}
+                    </span>
+                    <MobileActionButton label="Edit" onClick={() => openEdit(asset)}>
+                      <Pencil className="h-4 w-4" />
+                    </MobileActionButton>
+                    <MobileActionButton label="Delete" destructive onClick={() => setDeleting(asset)}>
+                      <Trash2 className="h-4 w-4" />
+                    </MobileActionButton>
+                  </MobileRecordFooter>
+                </div>
+              </div>
+            </MobileRecordCard>
+          )}
+        />
+        <DesktopTableOnly>
+          <DataTable data={filtered} columns={columns} />
+        </DesktopTableOnly>
         <div className="px-4 pb-4">
           <PaginationBar
             page={page}

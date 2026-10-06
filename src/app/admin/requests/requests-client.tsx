@@ -4,7 +4,7 @@ import * as React from "react";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, Mail, Phone } from "lucide-react";
+import { Pencil, Trash2, Mail, Phone } from "lucide-react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faEye,
@@ -25,6 +25,14 @@ import {
 } from "@/constants";
 import { formatDate } from "@/lib/utils/format";
 import { DataTable } from "@/components/admin/data-table";
+import {
+  DesktopTableOnly,
+  MobileActionButton,
+  MobileRecordCard,
+  MobileRecordFooter,
+  MobileRecordHead,
+  MobileRecordList,
+} from "@/components/admin/mobile-record-card";
 import { PaginationBar } from "@/components/admin/pagination-bar";
 import { FilterBar } from "@/components/admin/filter-bar";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -225,7 +233,76 @@ export function RequestsClient({
             ]}
           />
         </div>
-        <DataTable data={requests} columns={columns} />
+        <MobileRecordList
+          items={requests}
+          getKey={(request) => request.id}
+          renderCard={(request) => (
+            <MobileRecordCard className="px-3 py-3.5">
+              <div className="flex items-start gap-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold uppercase text-primary">
+                  {request.name
+                    .split(" ")
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((part) => part[0])
+                    .join("")}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <MobileRecordHead
+                    title={request.name}
+                    subtitle={request.subject || request.request_type.replace(/_/g, " ")}
+                    trailing={
+                      <StatusBadge
+                        status={request.status}
+                        statuses={[...CONTACT_STATUSES]}
+                      />
+                    }
+                  />
+                  <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-border/70 pt-2.5 text-[11px]">
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Type</p>
+                      <p className="mt-0.5 truncate capitalize font-medium text-foreground">
+                        {request.request_type.replace(/_/g, " ")}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Received</p>
+                      <p className="mt-0.5 font-medium text-foreground">
+                        {formatDate(request.created_at, "MMM d, yyyy")}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Email</p>
+                      <p className="mt-0.5 truncate font-medium text-foreground">{request.email || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Phone</p>
+                      <p className="mt-0.5 truncate font-medium text-foreground">{request.phone || "—"}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="uppercase tracking-wide text-muted-foreground">Message</p>
+                      <p className="mt-0.5 line-clamp-2 font-medium text-foreground">{request.message}</p>
+                    </div>
+                  </div>
+                  <MobileRecordFooter>
+                    <MobileActionButton label="View" onClick={() => setViewing(request)}>
+                      <FontAwesomeIcon icon={faEye} className="h-4 w-4" />
+                    </MobileActionButton>
+                    <MobileActionButton label="Update" onClick={() => setUpdating(request)}>
+                      <Pencil className="h-4 w-4" />
+                    </MobileActionButton>
+                    <MobileActionButton label="Delete" destructive onClick={() => setDeleting(request)}>
+                      <Trash2 className="h-4 w-4" />
+                    </MobileActionButton>
+                  </MobileRecordFooter>
+                </div>
+              </div>
+            </MobileRecordCard>
+          )}
+        />
+        <DesktopTableOnly>
+          <DataTable data={requests} columns={columns} />
+        </DesktopTableOnly>
         <div className="px-4 pb-4">
           <PaginationBar
             page={page}

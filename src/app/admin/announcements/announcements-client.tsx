@@ -17,8 +17,6 @@ import { DataTable, type Column } from "@/components/admin/data-table";
 import {
   DesktopTableOnly,
   MobileActionButton,
-  MobileMetaGrid,
-  MobileMetaTile,
   MobileRecordCard,
   MobileRecordFooter,
   MobileRecordHead,
@@ -238,33 +236,60 @@ export function AnnouncementsClient({
           items={data}
           getKey={(row) => row.id}
           renderCard={(row) => (
-            <MobileRecordCard>
-              <MobileRecordHead
-                title={row.title}
-                subtitle={row.priority ? `Priority: ${row.priority}` : undefined}
-                trailing={<StatusBadge status={row.status} statuses={[...ANNOUNCEMENT_STATUSES]} />}
-              />
-              <MobileMetaGrid>
-                <MobileMetaTile
-                  label="Start"
-                  value={row.start_date ? formatDate(row.start_date) : "—"}
-                />
-                <MobileMetaTile label="End" value={row.end_date ? formatDate(row.end_date) : "—"} />
-              </MobileMetaGrid>
-              <MobileRecordFooter
-                meta={
-                  row.end_date ? (
-                    <span className="truncate">Ends {formatDate(row.end_date)}</span>
-                  ) : undefined
-                }
-              >
-                <MobileActionButton label="Edit" onClick={() => openEdit(row)}>
-                  <Pencil className="h-4 w-4" />
-                </MobileActionButton>
-                <MobileActionButton label="Delete" destructive onClick={() => setDeleteId(row.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </MobileActionButton>
-              </MobileRecordFooter>
+            <MobileRecordCard className="px-3 py-3.5">
+              <div className="flex items-start gap-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold uppercase text-primary">
+                  {row.title
+                    .split(" ")
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((part) => part[0])
+                    .join("")}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <MobileRecordHead
+                    title={row.title}
+                    subtitle={row.description || undefined}
+                    trailing={
+                      <StatusBadge
+                        status={row.status}
+                        statuses={[...ANNOUNCEMENT_STATUSES]}
+                      />
+                    }
+                  />
+                  <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-border/70 pt-2.5 text-[11px]">
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Priority</p>
+                      <div className="mt-0.5">
+                        <StatusBadge
+                          status={row.priority}
+                          statuses={[...ANNOUNCEMENT_PRIORITIES]}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Start</p>
+                      <p className="mt-0.5 font-medium text-foreground">
+                        {row.start_date ? formatDate(row.start_date) : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">End</p>
+                      <p className="mt-0.5 font-medium text-foreground">
+                        {row.end_date ? formatDate(row.end_date) : "—"}
+                      </p>
+                    </div>
+                  </div>
+                  <MobileRecordFooter>
+                    <MobileActionButton label="Edit" onClick={() => openEdit(row)}>
+                      <Pencil className="h-4 w-4" />
+                    </MobileActionButton>
+                    <MobileActionButton label="Delete" destructive onClick={() => setDeleteId(row.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </MobileActionButton>
+                  </MobileRecordFooter>
+                </div>
+              </div>
             </MobileRecordCard>
           )}
         />

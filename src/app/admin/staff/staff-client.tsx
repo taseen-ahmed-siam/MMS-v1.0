@@ -16,6 +16,14 @@ import { DataTable, type Column } from "@/components/admin/data-table";
 import { FilterBar } from "@/components/admin/filter-bar";
 import { PaginationBar } from "@/components/admin/pagination-bar";
 import { FormDialog } from "@/components/admin/form-dialog";
+import {
+  DesktopTableOnly,
+  MobileActionButton,
+  MobileRecordCard,
+  MobileRecordFooter,
+  MobileRecordHead,
+  MobileRecordList,
+} from "@/components/admin/mobile-record-card";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { AdminTableWrapper } from "@/components/admin/table-wrapper";
 import { PageHeader } from "@/components/forms/page-header";
@@ -213,7 +221,66 @@ export function StaffClient({ data, total, page, totalPages, filters }: StaffCli
       />
 
       <AdminTableWrapper empty={data.length === 0} emptyTitle="No staff members">
-        <DataTable columns={columns} data={data} />
+        <MobileRecordList
+          items={data}
+          getKey={(row) => row.id}
+          renderCard={(row) => (
+            <MobileRecordCard className="px-3 py-3.5">
+              <div className="flex items-start gap-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                  {row.name
+                    .split(" ")
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((part) => part[0])
+                    .join("")
+                    .toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <MobileRecordHead
+                    title={row.name}
+                    subtitle={row.email || row.role}
+                    trailing={
+                      <StatusBadge
+                        status={row.employment_status}
+                        statuses={[...STAFF_STATUSES]}
+                      />
+                    }
+                  />
+                  <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-border/70 pt-2.5 text-[11px]">
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Role</p>
+                      <p className="mt-0.5 truncate font-medium text-foreground">{row.role}</p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Staff ID</p>
+                      <p className="mt-0.5 truncate font-medium text-foreground">{row.staff_id}</p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Phone</p>
+                      <p className="mt-0.5 truncate font-medium text-foreground">{row.phone || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Joined</p>
+                      <p className="mt-0.5 font-medium text-foreground">{formatDate(row.joining_date)}</p>
+                    </div>
+                  </div>
+                  <MobileRecordFooter meta={row.salary != null ? formatCurrency(row.salary) : undefined}>
+                    <MobileActionButton label="Edit" onClick={() => openEdit(row)}>
+                      <Pencil className="h-4 w-4" />
+                    </MobileActionButton>
+                    <MobileActionButton label="Delete" destructive onClick={() => setDeleteId(row.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </MobileActionButton>
+                  </MobileRecordFooter>
+                </div>
+              </div>
+            </MobileRecordCard>
+          )}
+        />
+        <DesktopTableOnly>
+          <DataTable columns={columns} data={data} />
+        </DesktopTableOnly>
       </AdminTableWrapper>
 
       <PaginationBar page={page} totalPages={totalPages} total={total} onPageChange={handlePageChange} />

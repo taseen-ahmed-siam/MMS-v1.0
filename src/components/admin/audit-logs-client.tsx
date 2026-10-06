@@ -5,6 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faScroll } from "@fortawesome/free-solid-svg-icons";
 import { DataTable } from "@/components/admin/data-table";
+import {
+  DesktopTableOnly,
+  MobileRecordCard,
+  MobileRecordHead,
+  MobileRecordList,
+} from "@/components/admin/mobile-record-card";
 import { AdminTableWrapper } from "@/components/admin/table-wrapper";
 import { FilterBar } from "@/components/admin/filter-bar";
 import { PaginationBar } from "@/components/admin/pagination-bar";
@@ -75,6 +81,60 @@ function AuditLogsClient({
   }
 
   const moduleOptions = MODULES.map((m) => ({ value: m, label: m.charAt(0).toUpperCase() + m.slice(1) }));
+  const columns = [
+    {
+      key: "user",
+      header: "User",
+      cell: (row: AuditLog) => (
+        <div>
+          <p className="font-medium">{row.user_name || "System"}</p>
+          <p className="text-xs text-muted-foreground">{row.user_id || "—"}</p>
+        </div>
+      ),
+    },
+    {
+      key: "action",
+      header: "Action",
+      cell: (row: AuditLog) => (
+        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${actionBadge(row.action)}`}>
+          {row.action}
+        </span>
+      ),
+    },
+    {
+      key: "module",
+      header: "Module",
+      cell: (row: AuditLog) => <span className="capitalize">{row.module}</span>,
+    },
+    {
+      key: "entity",
+      header: "Entity",
+      cell: (row: AuditLog) => (
+        <div>
+          <p className="capitalize">{row.entity}</p>
+          {row.entity_id && <p className="text-xs text-muted-foreground">{row.entity_id}</p>}
+        </div>
+      ),
+    },
+    {
+      key: "ip",
+      header: "IP Address",
+      cell: (row: AuditLog) => <span className="text-muted-foreground">{row.ip_address || "—"}</span>,
+    },
+    {
+      key: "created_at",
+      header: "Date",
+      className: "text-right",
+      cell: (row: AuditLog) => (
+        <div className="text-right">
+          <p className="whitespace-nowrap">{formatDate(row.created_at, "MMM d, yyyy")}</p>
+          <p className="text-xs text-muted-foreground">
+            {formatTime(new Date(row.created_at).toTimeString().slice(0, 5))} · {timeAgo(row.created_at)}
+          </p>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -111,63 +171,50 @@ function AuditLogsClient({
         emptyTitle="No audit logs"
         emptyDescription="No activity matches your current filters."
       >
-        <DataTable
-          columns={[
-            {
-              key: "user",
-              header: "User",
-              cell: (row) => (
+        <MobileRecordList
+          items={logs}
+          getKey={(row) => row.id}
+          renderCard={(row) => (
+            <MobileRecordCard className="px-3 py-3.5">
+              <MobileRecordHead
+                title={row.user_name || "System"}
+                subtitle={`${row.module} · ${row.entity}`}
+                trailing={
+                  <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize ${actionBadge(row.action)}`}>
+                    {row.action}
+                  </span>
+                }
+              />
+              <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-border/70 pt-2.5 text-[11px]">
                 <div>
-                  <p className="font-medium">{row.user_name || "System"}</p>
-                  <p className="text-xs text-muted-foreground">{row.user_id || "—"}</p>
+                  <p className="uppercase tracking-wide text-muted-foreground">Module</p>
+                  <p className="mt-0.5 capitalize font-medium text-foreground">{row.module}</p>
                 </div>
-              ),
-            },
-            {
-              key: "action",
-              header: "Action",
-              cell: (row) => (
-                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${actionBadge(row.action)}`}>
-                  {row.action}
-                </span>
-              ),
-            },
-            {
-              key: "module",
-              header: "Module",
-              cell: (row) => <span className="capitalize">{row.module}</span>,
-            },
-            {
-              key: "entity",
-              header: "Entity",
-              cell: (row) => (
                 <div>
-                  <p className="capitalize">{row.entity}</p>
-                  {row.entity_id && <p className="text-xs text-muted-foreground">{row.entity_id}</p>}
+                  <p className="uppercase tracking-wide text-muted-foreground">Entity</p>
+                  <p className="mt-0.5 capitalize font-medium text-foreground">{row.entity}</p>
                 </div>
-              ),
-            },
-            {
-              key: "ip",
-              header: "IP Address",
-              cell: (row) => <span className="text-muted-foreground">{row.ip_address || "—"}</span>,
-            },
-            {
-              key: "created_at",
-              header: "Date",
-              className: "text-right",
-              cell: (row) => (
-                <div className="text-right">
-                  <p className="whitespace-nowrap">{formatDate(row.created_at, "MMM d, yyyy")}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatTime(new Date(row.created_at).toTimeString().slice(0, 5))} · {timeAgo(row.created_at)}
+                <div>
+                  <p className="uppercase tracking-wide text-muted-foreground">IP Address</p>
+                  <p className="mt-0.5 truncate font-medium text-foreground">{row.ip_address || "—"}</p>
+                </div>
+                <div>
+                  <p className="uppercase tracking-wide text-muted-foreground">Date</p>
+                  <p className="mt-0.5 font-medium text-foreground">
+                    {formatDate(row.created_at, "MMM d, yyyy")}
                   </p>
                 </div>
-              ),
-            },
-          ]}
-          data={logs}
+              </div>
+              <div className="mt-2.5 flex items-center justify-between border-t border-border/70 pt-2.5 text-[11px] text-muted-foreground">
+                <span className="truncate">{row.entity_id || row.user_id || "System action"}</span>
+                <span className="shrink-0">{timeAgo(row.created_at)}</span>
+              </div>
+            </MobileRecordCard>
+          )}
         />
+        <DesktopTableOnly>
+          <DataTable columns={columns} data={logs} />
+        </DesktopTableOnly>
       </AdminTableWrapper>
 
       <PaginationBar

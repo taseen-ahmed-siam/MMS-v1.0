@@ -255,7 +255,83 @@ export function MembersClient({
       />
 
       <AdminTableWrapper empty={data.length === 0} emptyTitle="No members" emptyDescription="No members found.">
-        <DataTable columns={columns} data={data} />
+        <div className="hidden md:block">
+          <DataTable columns={columns} data={data} />
+        </div>
+        <div className="divide-y divide-border md:hidden">
+          {data.map((member) => (
+            <div key={member.id} className="px-3 py-3.5">
+              <div className="flex items-start gap-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
+                  {member.full_name
+                    .split(" ")
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((part) => part[0])
+                    .join("")
+                    .toUpperCase()}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold leading-5 text-foreground">{member.full_name}</p>
+                      {member.email && (
+                        <p className="truncate text-[11px] leading-4 text-muted-foreground">{member.email}</p>
+                      )}
+                    </div>
+                    <div className="shrink-0">
+                      <StatusBadge status={member.status} statuses={[...MEMBER_STATUSES]} />
+                    </div>
+                  </div>
+                  <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-border/70 pt-2.5 text-[11px]">
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Phone</p>
+                      <p className="mt-0.5 truncate font-medium text-foreground">{member.phone ?? "—"}</p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Type</p>
+                      <p className="mt-0.5 capitalize font-medium text-foreground">{member.membership_type ?? "—"}</p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Joined</p>
+                      <p className="mt-0.5 font-medium text-foreground">{formatDate(member.date_joined ?? member.created_at)}</p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Member ID</p>
+                      <p className="mt-0.5 truncate font-medium text-foreground">
+                        {member.source === "profile" ? "Account" : member.member_id ?? "—"}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-2.5 flex justify-end">
+                    {member.source === "profile" ? (
+                      <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => openCreate(member)}>
+                        <UserPlus className="mr-1 h-4 w-4" />
+                        Add Details
+                      </Button>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => openEdit(member)}>
+                          <Pencil className="mr-1 h-4 w-4" />
+                          Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          aria-label={`Delete ${member.full_name}`}
+                          onClick={() => setDeleteId(member.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </AdminTableWrapper>
 
       <PaginationBar page={page} totalPages={totalPages} total={total} onPageChange={handlePageChange} />

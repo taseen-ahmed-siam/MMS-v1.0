@@ -16,8 +16,6 @@ import { DataTable, type Column } from "@/components/admin/data-table";
 import {
   DesktopTableOnly,
   MobileActionButton,
-  MobileMetaGrid,
-  MobileMetaTile,
   MobileRecordCard,
   MobileRecordFooter,
   MobileRecordHead,
@@ -275,34 +273,62 @@ export function EventsClient({ data, total, page, totalPages, filters, funds }: 
           items={data}
           getKey={(row) => row.id}
           renderCard={(row) => (
-            <MobileRecordCard>
-              <MobileRecordHead
-                title={row.title}
-                subtitle={row.event_type}
-                trailing={<StatusBadge status={row.status} statuses={[...EVENT_STATUSES]} />}
-              />
-              <MobileMetaGrid columns={3}>
-                <MobileMetaTile label="Date" value={row.start_date ? formatDate(row.start_date) : "—"} />
-                <MobileMetaTile label="Venue" value={row.venue || "—"} />
-                <MobileMetaTile
-                  label="Per Head"
-                  value={Number(row.contribution_amount) > 0 ? formatCurrency(Number(row.contribution_amount)) : "—"}
-                />
-              </MobileMetaGrid>
-              <MobileRecordFooter>
-                <MobileActionButton
-                  label="Contribution tracking"
-                  onClick={() => router.push(`/admin/events/${row.id}`)}
-                >
-                  <BarChart3 className="h-4 w-4" />
-                </MobileActionButton>
-                <MobileActionButton label="Edit" onClick={() => openEdit(row)}>
-                  <Pencil className="h-4 w-4" />
-                </MobileActionButton>
-                <MobileActionButton label="Delete" destructive onClick={() => setDeleteId(row.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </MobileActionButton>
-              </MobileRecordFooter>
+            <MobileRecordCard className="px-3 py-3.5">
+              <div className="flex items-start gap-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold uppercase text-primary">
+                  {row.title
+                    .split(" ")
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((part) => part[0])
+                    .join("")}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <MobileRecordHead
+                    title={row.title}
+                    subtitle={row.event_type}
+                    trailing={<StatusBadge status={row.status} statuses={[...EVENT_STATUSES]} />}
+                  />
+                  <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-border/70 pt-2.5 text-[11px]">
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Date</p>
+                      <p className="mt-0.5 font-medium text-foreground">
+                        {row.start_date ? formatDate(row.start_date) : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Time</p>
+                      <p className="mt-0.5 font-medium text-foreground">{row.start_time || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Venue</p>
+                      <p className="mt-0.5 truncate font-medium text-foreground">{row.venue || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Per Head</p>
+                      <p className="mt-0.5 font-medium text-foreground">
+                        {Number(row.contribution_amount) > 0
+                          ? formatCurrency(Number(row.contribution_amount))
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+                  <MobileRecordFooter>
+                    <MobileActionButton
+                      label="Contribution tracking"
+                      onClick={() => router.push(`/admin/events/${row.id}`)}
+                    >
+                      <BarChart3 className="h-4 w-4" />
+                    </MobileActionButton>
+                    <MobileActionButton label="Edit" onClick={() => openEdit(row)}>
+                      <Pencil className="h-4 w-4" />
+                    </MobileActionButton>
+                    <MobileActionButton label="Delete" destructive onClick={() => setDeleteId(row.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </MobileActionButton>
+                  </MobileRecordFooter>
+                </div>
+              </div>
             </MobileRecordCard>
           )}
         />

@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Menu,
@@ -66,11 +67,16 @@ const pathLabels: Record<string, string> = {
   forbidden: "Forbidden",
 };
 
-function Breadcrumbs({ pathname }: { pathname: string }) {
+function Breadcrumbs({ pathname, dynamicLabel }: { pathname: string; dynamicLabel?: string }) {
   if (pathname === "/admin") return null;
   const segments = pathname.split("/").filter(Boolean);
   const crumbs = segments.map((segment, index) => ({
-    label: pathLabels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1),
+    label:
+      index === segments.length - 1 && dynamicLabel
+        ? dynamicLabel
+        : index === segments.length - 1 && segments[0] === "admin" && segments[1] === "events" && segments.length > 2
+          ? "Event details"
+        : pathLabels[segment] || segment.charAt(0).toUpperCase() + segment.slice(1),
     href: "/" + segments.slice(0, index + 1).join("/"),
     isLast: index === segments.length - 1,
   }));
@@ -102,8 +108,22 @@ export function AdminHeader({
   onToggleMobile,
 }: AdminHeaderProps) {
   const pathname = usePathname();
+  const [dynamicBreadcrumb, setDynamicBreadcrumb] = useState("");
   const initials = getInitials(user.full_name);
   const canManageSettings = permissionsAllow(permissions, "settings.manage");
+
+  useEffect(() => {
+    const handleBreadcrumbUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent<{ pathname: string; label: string }>;
+      if (customEvent.detail.pathname === pathname) {
+        setDynamicBreadcrumb(customEvent.detail.label);
+      }
+    };
+
+    setDynamicBreadcrumb("");
+    window.addEventListener("admin-breadcrumb-update", handleBreadcrumbUpdate);
+    return () => window.removeEventListener("admin-breadcrumb-update", handleBreadcrumbUpdate);
+  }, [pathname]);
 
   return (
     <header className="flex h-16 shrink-0 items-center border-b border-[#C8A951]/30 bg-white px-4 gap-3 print:hidden">
@@ -127,7 +147,7 @@ export function AdminHeader({
       <Separator orientation="vertical" className="h-6" />
 
       <div className="flex flex-1 items-center gap-2 overflow-hidden">
-        <Breadcrumbs pathname={pathname} />
+        <Breadcrumbs pathname={pathname} dynamicLabel={dynamicBreadcrumb} />
       </div>
 
       <DropdownMenu>

@@ -24,8 +24,6 @@ import { DataTable } from "@/components/admin/data-table";
 import {
   DesktopTableOnly,
   MobileActionButton,
-  MobileMetaGrid,
-  MobileMetaTile,
   MobileRecordCard,
   MobileRecordFooter,
   MobileRecordHead,
@@ -357,55 +355,78 @@ export function DonationsClient({
           items={donations}
           getKey={(d) => d.id}
           renderCard={(d) => (
-            <MobileRecordCard>
-              <MobileRecordHead
-                title={d.is_anonymous ? "Anonymous" : d.donor_name}
-                subtitle={d.receipt_number || d.donor_phone || undefined}
-                trailing={<StatusBadge status={d.status} statuses={[...DONATION_STATUSES]} />}
-              />
-              <MobileMetaGrid columns={3}>
-                <MobileMetaTile
-                  label="Amount"
-                  tone="emerald"
-                  value={formatCurrency(Number(d.amount) || 0)}
-                />
-                <MobileMetaTile
-                  label="Method"
-                  value={d.payment_method?.replace(/_/g, " ") || "—"}
-                />
-                <MobileMetaTile
-                  label="Date"
-                  value={d.donation_date ? formatDate(d.donation_date) : "—"}
-                />
-              </MobileMetaGrid>
-              <MobileRecordFooter
-                meta={
-                  <span className="truncate">
-                    Fund: {d.donation_funds?.name || "General"}
-                  </span>
-                }
-              >
-                {d.status === "pending" && (
-                  <>
-                    <MobileActionButton
-                      label="Approve"
-                      success
-                      onClick={() => handleApproveClick(d)}
-                    >
-                      <Check className="h-4 w-4" />
+            <MobileRecordCard className="px-3 py-3.5">
+              <div className="flex items-start gap-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold uppercase text-primary">
+                  {(d.is_anonymous ? "Anonymous" : d.donor_name)
+                    .split(" ")
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((part) => part[0])
+                    .join("")}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <MobileRecordHead
+                    title={d.is_anonymous ? "Anonymous" : d.donor_name}
+                    subtitle={d.receipt_number || d.donor_phone || undefined}
+                    trailing={<StatusBadge status={d.status} statuses={[...DONATION_STATUSES]} />}
+                  />
+                  <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-border/70 pt-2.5 text-[11px]">
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Amount</p>
+                      <p className="mt-0.5 font-semibold text-primary">
+                        {formatCurrency(Number(d.amount) || 0)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Fund</p>
+                      <p className="mt-0.5 truncate font-medium text-foreground">
+                        {d.donation_funds?.name || "General"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Method</p>
+                      <p className="mt-0.5 capitalize font-medium text-foreground">
+                        {d.payment_method?.replace(/_/g, " ") || "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Date</p>
+                      <p className="mt-0.5 font-medium text-foreground">
+                        {d.donation_date ? formatDate(d.donation_date) : "—"}
+                      </p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="uppercase tracking-wide text-muted-foreground">Member</p>
+                      <p className="mt-0.5 truncate font-medium text-foreground">
+                        {d.members ? `${d.members.full_name} (${d.members.member_id})` : "Not linked"}
+                      </p>
+                    </div>
+                  </div>
+                  <MobileRecordFooter>
+                    {d.status === "pending" && (
+                      <>
+                        <MobileActionButton
+                          label="Approve"
+                          success
+                          onClick={() => handleApproveClick(d)}
+                        >
+                          <Check className="h-4 w-4" />
+                        </MobileActionButton>
+                        <MobileActionButton label="Reject" onClick={() => setRejecting(d)}>
+                          <X className="h-4 w-4" />
+                        </MobileActionButton>
+                      </>
+                    )}
+                    <MobileActionButton label="Edit" onClick={() => openEdit(d)}>
+                      <Pencil className="h-4 w-4" />
                     </MobileActionButton>
-                    <MobileActionButton label="Reject" onClick={() => setRejecting(d)}>
-                      <X className="h-4 w-4" />
+                    <MobileActionButton label="Delete" destructive onClick={() => setDeleting(d)}>
+                      <Trash2 className="h-4 w-4" />
                     </MobileActionButton>
-                  </>
-                )}
-                <MobileActionButton label="Edit" onClick={() => openEdit(d)}>
-                  <Pencil className="h-4 w-4" />
-                </MobileActionButton>
-                <MobileActionButton label="Delete" destructive onClick={() => setDeleting(d)}>
-                  <Trash2 className="h-4 w-4" />
-                </MobileActionButton>
-              </MobileRecordFooter>
+                  </MobileRecordFooter>
+                </div>
+              </div>
             </MobileRecordCard>
           )}
         />

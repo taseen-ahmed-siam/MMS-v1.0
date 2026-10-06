@@ -18,8 +18,6 @@ import { PaginationBar } from "@/components/admin/pagination-bar";
 import {
   DesktopTableOnly,
   MobileActionButton,
-  MobileMetaGrid,
-  MobileMetaTile,
   MobileRecordCard,
   MobileRecordFooter,
   MobileRecordHead,
@@ -221,30 +219,46 @@ export function KhutbahClient({ data, total, page, totalPages, filters }: Khutba
           items={data}
           getKey={(row) => row.id}
           renderCard={(row) => (
-            <MobileRecordCard>
-              <MobileRecordHead
-                title={row.title}
-                subtitle={row.speaker || row.description || undefined}
-                trailing={<StatusBadge status={row.status} statuses={[...KHUTBAH_STATUSES]} />}
-              />
-              <MobileMetaGrid>
-                <MobileMetaTile label="Speaker" value={row.speaker || "—"} />
-                <MobileMetaTile label="Date" value={formatDate(row.date)} />
-              </MobileMetaGrid>
-              <MobileRecordFooter
-                meta={
-                  row.description && row.speaker ? (
-                    <span className="truncate">{row.description}</span>
-                  ) : undefined
-                }
-              >
-                <MobileActionButton label="Edit" onClick={() => openEdit(row)}>
-                  <Pencil className="h-4 w-4" />
-                </MobileActionButton>
-                <MobileActionButton label="Delete" destructive onClick={() => setDeleteId(row.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </MobileActionButton>
-              </MobileRecordFooter>
+            <MobileRecordCard className="px-3 py-3.5">
+              <div className="flex items-start gap-2.5">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold uppercase text-primary">
+                  {row.title
+                    .split(" ")
+                    .filter(Boolean)
+                    .slice(0, 2)
+                    .map((part) => part[0])
+                    .join("")}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <MobileRecordHead
+                    title={row.title}
+                    subtitle={row.speaker || row.description || undefined}
+                    trailing={<StatusBadge status={row.status} statuses={[...KHUTBAH_STATUSES]} />}
+                  />
+                  <div className="mt-2.5 grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-border/70 pt-2.5 text-[11px]">
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Speaker</p>
+                      <p className="mt-0.5 truncate font-medium text-foreground">{row.speaker || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="uppercase tracking-wide text-muted-foreground">Date</p>
+                      <p className="mt-0.5 font-medium text-foreground">{formatDate(row.date)}</p>
+                    </div>
+                    <div className="col-span-2">
+                      <p className="uppercase tracking-wide text-muted-foreground">Description</p>
+                      <p className="mt-0.5 truncate font-medium text-foreground">{row.description || "—"}</p>
+                    </div>
+                  </div>
+                  <MobileRecordFooter>
+                    <MobileActionButton label="Edit" onClick={() => openEdit(row)}>
+                      <Pencil className="h-4 w-4" />
+                    </MobileActionButton>
+                    <MobileActionButton label="Delete" destructive onClick={() => setDeleteId(row.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </MobileActionButton>
+                  </MobileRecordFooter>
+                </div>
+              </div>
             </MobileRecordCard>
           )}
         />

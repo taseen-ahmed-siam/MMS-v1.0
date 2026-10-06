@@ -234,39 +234,39 @@ export function ReportsClient({
   };
 
   return (
-    <div className="space-y-4">
-      <header className="islamic-pattern-dark relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#043d2e] via-[#065f46] to-[#087f5b] px-4 py-3 text-white shadow-sm print:hidden sm:px-5">
+    <div className="mx-auto max-w-[1600px] space-y-4">
+      <header className="islamic-pattern-dark relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#043d2e] via-[#065f46] to-[#087f5b] px-3.5 py-3.5 text-white shadow-sm print:hidden sm:px-5">
         <div className="relative flex flex-col gap-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="text-lg font-bold tracking-tight sm:text-xl">Financial Reports</h1>
+              <h1 className="text-base font-bold tracking-tight sm:text-xl">Financial Reports</h1>
               <p className="mt-0.5 truncate text-xs text-emerald-50/80">
                 {report ? `${formatDate(report.period.from)} – ${formatDate(report.period.to)}` : "Loading period…"}
                 {selectedFundName ? ` · ${selectedFundName}` : " · All funds"}
               </p>
             </div>
-            <div className="flex shrink-0 gap-2">
-              <Button type="button" className="h-8 border-white/25 bg-white/10 px-3 text-xs text-white hover:bg-white/20" variant="outline" size="sm" onClick={exportCsv} disabled={!report}>
+            <div className="flex w-full gap-2 sm:w-auto">
+              <Button type="button" className="h-8 flex-1 border-white/25 bg-white/10 px-3 text-xs text-white hover:bg-white/20 sm:flex-none" variant="outline" size="sm" onClick={exportCsv} disabled={!report}>
                 <Download className="h-3.5 w-3.5" /> CSV
               </Button>
-              <Button type="button" className="h-8 bg-[#c8a951] px-3 text-xs text-[#17201c] hover:bg-[#d8bb68]" size="sm" onClick={() => window.print()} disabled={!report || loading}>
+              <Button type="button" className="h-8 flex-1 bg-[#c8a951] px-3 text-xs text-[#17201c] hover:bg-[#d8bb68] sm:flex-none" size="sm" onClick={() => window.print()} disabled={!report || loading}>
                 <Printer className="h-3.5 w-3.5" /> Print / PDF
               </Button>
             </div>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto]">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto]">
             <FilterInput label="Start date" type="date" value={from} onChange={(value) => { setFrom(value); setMonth(""); }} dark />
             <FilterInput label="End date" type="date" value={to} min={from} onChange={(value) => { setTo(value); setMonth(""); }} dark />
             <FilterInput label="Month" type="month" value={month} onChange={setMonth} dark />
-            <label className="text-[11px] font-semibold text-emerald-50/70">
+            <label className="col-span-2 text-[11px] font-semibold text-emerald-50/70 sm:col-span-1">
               Fund
               <select value={fundId} onChange={(event) => setFundId(event.target.value)} className="mt-1 h-8 w-full rounded-md border border-white/25 bg-white/10 px-2 text-xs font-normal text-white outline-none focus:ring-2 focus:ring-white/40 [&>option]:text-foreground">
                 <option value="">All Funds</option>
                 {funds.map((fund) => <option key={fund.id} value={fund.id}>{fund.name}</option>)}
               </select>
             </label>
-            <Button variant="ghost" size="sm" className="h-8 self-end px-2 text-xs text-white hover:bg-white/15" onClick={resetFilters}>
+            <Button variant="ghost" size="sm" className="col-span-2 h-8 justify-self-end px-2 text-xs text-white hover:bg-white/15 sm:col-span-1" onClick={resetFilters}>
               Reset
             </Button>
           </div>
@@ -281,7 +281,7 @@ export function ReportsClient({
         <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-16 text-center text-sm text-red-700">{error}</div>
       ) : report ? (
         <>
-          <section className="grid grid-cols-2 gap-2.5 print:hidden sm:gap-3 lg:grid-cols-4">
+          <section className="grid grid-cols-2 gap-2 print:hidden sm:gap-3 lg:grid-cols-4">
             <KpiCard label="Total income" value={report.totals.income} currency={currency} icon={<ArrowDownToLine />} accent="emerald" caption={`${rows.filter((row) => row.incomeAmount > 0).length} income entries`} />
             <KpiCard label="Total expenses" value={report.totals.expenses} currency={currency} icon={<ArrowUpToLine />} accent="rose" caption={`${rows.filter((row) => row.expenseAmount > 0).length} expense entries`} />
             <KpiCard label="Net balance" value={report.totals.balance} currency={currency} icon={<WalletCards />} accent={report.totals.balance >= 0 ? "gold" : "rose"} caption={report.totals.balance >= 0 ? "Surplus for this period" : "Deficit for this period"} />
@@ -321,7 +321,7 @@ export function ReportsClient({
           <MonthlySummaryTable data={chartData} currency={currency} totals={report.totals} />
 
           <section id="financial-report-preview" className="overflow-hidden rounded-xl border bg-white shadow-sm print:hidden">
-            <div className="flex flex-col gap-2 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-2.5 border-b px-3.5 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-4">
               <div>
                 <h2 className="text-base font-bold">{reportTitle}</h2>
                 <p className="mt-0.5 text-xs text-muted-foreground">
@@ -329,8 +329,8 @@ export function ReportsClient({
                   <strong className="text-foreground">{formatCurrency(report.ytd.balance, currency)}</strong>
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="relative">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                <div className="relative min-w-0">
                   <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                   <input
                     value={search}
@@ -344,7 +344,7 @@ export function ReportsClient({
                   value={typeFilter}
                   onChange={(event) => { setTypeFilter(event.target.value); setPage(1); }}
                   aria-label="Filter by type"
-                  className="h-8 rounded-md border bg-background px-2 text-xs outline-none focus:ring-2 focus:ring-primary/20"
+                  className="h-8 max-w-[110px] rounded-md border bg-background px-2 text-xs outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   <option value="">All types</option>
                   <option value="income">Income</option>
@@ -386,7 +386,7 @@ export function ReportsClient({
 
                 <div className="divide-y md:hidden">
                   {pagedRows.map((row) => (
-                    <article key={row.id} className={`px-4 py-3.5 ${row.isException ? "bg-amber-50/60" : ""}`}>
+                    <article key={row.id} className={`px-3.5 py-3.5 ${row.isException ? "bg-amber-50/60" : ""}`}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="text-sm font-semibold leading-snug break-words">{row.description}</p>
@@ -404,7 +404,7 @@ export function ReportsClient({
                         <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Balance</p>
                       </div>
 
-                      <div className="mt-2.5 grid grid-cols-2 gap-2 text-xs">
+                      <div className="mt-2.5 grid grid-cols-2 gap-2 text-[11px]">
                         <div className="rounded-md bg-emerald-50 px-2.5 py-1.5">
                           <p className="text-[10px] uppercase tracking-wide text-emerald-700/70">Income</p>
                           <p className="mt-0.5 font-semibold tabular-nums text-emerald-700">{row.incomeAmount ? formatCurrency(row.incomeAmount, currency) : "—"}</p>

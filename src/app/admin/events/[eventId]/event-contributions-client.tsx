@@ -96,6 +96,14 @@ export function EventContributionsClient({
 }) {
   const router = useRouter();
 
+  React.useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent("admin-breadcrumb-update", {
+        detail: { pathname: `/admin/events/${event.id}`, label: event.title },
+      })
+    );
+  }, [event.id, event.title]);
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [stageFilter, setStageFilter] = useState("all");
